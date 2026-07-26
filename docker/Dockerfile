@@ -25,7 +25,17 @@ RUN apt-get update && apt-get install -y \
     liblapack-dev \
     libmumps-seq-dev \
     patchelf \
-    libboost-dev
+    libboost-dev \
+    xorg-dev \
+    mesa-utils \
+    xvfb \
+    libgl1 \
+    freeglut3-dev \
+    libxrandr-dev \
+    libxinerama-dev \
+    libxcursor-dev \
+    libxi-dev \
+    libxext-dev
 
 # install Eigen
 ARG EIGEN_VERSION="5.0.1"
