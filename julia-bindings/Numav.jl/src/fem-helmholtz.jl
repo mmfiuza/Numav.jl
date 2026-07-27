@@ -309,313 +309,269 @@ import HDF5
 import GLMakie
 import LinearAlgebra
 
-# # --- Quadratic root helper (for second‑order edges) ---
-# function find_roots_quadratic(a, b, c, tol)
-#     roots = Float64[]
-#     if abs(a) < 1e-12 && abs(b) > 1e-12
-#         t = -c / b
-#         if -tol <= t <= 1 + tol
-#             t_clamped = clamp(t, 0.0, 1.0)
-#             # check if the function value is really zero
-#             if abs(a*t_clamped^2 + b*t_clamped + c) < 100*tol
-#                 push!(roots, t_clamped)
-#             end
-#         end
-#     else
-#         D = b^2 - 4*a*c
-#         if D >= -tol
-#             D = max(D, 0.0)
-#             sqrtD = sqrt(D)
-#             t1 = (-b + sqrtD) / (2a)
-#             t2 = (-b - sqrtD) / (2a)
-#             for t in (t1, t2)
-#                 if -tol <= t <= 1 + tol
-#                     t_clamped = clamp(t, 0.0, 1.0)
-#                     if abs(a*t_clamped^2 + b*t_clamped + c) < 100*tol
-#                         push!(roots, t_clamped)
-#                     end
-#                 end
-#             end
-#         end
-#     end
-#     return unique(roots)  # remove duplicates caused by clamping
-# end
+function order_points(
+    cni::Vector{Int},
+    cni_to_xyz::Vector{GLMakie.Point3f},
+    dimension_to_eliminate::Int
+)
+    function segments_intersect(
+        p1::Tuple{Float32,Float32},
+        p2::Tuple{Float32,Float32},
+        p3::Tuple{Float32,Float32},
+        p4::Tuple{Float32,Float32}
+    )
+        function cross_prod(
+            a::Tuple{Float32,Float32},
+            b::Tuple{Float32,Float32},
+            c::Tuple{Float32,Float32}
+        )
+            return (b[1] - a[1])*(c[2] - a[2]) - (b[2] - a[2])*(c[1] - a[1])
+        end
+        d1 = cross_prod(p3, p4, p1)
+        d2 = cross_prod(p3, p4, p2)
+        d3 = cross_prod(p1, p2, p3)
+        d4 = cross_prod(p1, p2, p4)
+
+        return ((d1 > 0) != (d2 > 0)) && ((d3 > 0) != (d4 > 0))
+    end
+
+    dims = filter!(x -> x != dimension_to_eliminate, [1,2,3])
+    a = (cni_to_xyz[cni[1]][dims[1]], cni_to_xyz[cni[1]][dims[2]])
+    b = (cni_to_xyz[cni[2]][dims[1]], cni_to_xyz[cni[2]][dims[2]])
+    c = (cni_to_xyz[cni[3]][dims[1]], cni_to_xyz[cni[3]][dims[2]])
+    d = (cni_to_xyz[cni[4]][dims[1]], cni_to_xyz[cni[4]][dims[2]])
+
+    if segments_intersect(a, c, b, d)
+        return (cni[1], cni[2], cni[3], cni[4])
+    end
+    if segments_intersect(a, b, c, d)
+        return (cni[1], cni[3], cni[2], cni[4])
+    end
+    if segments_intersect(a, d, b, c)
+        return (cni[1], cni[2], cni[4], cni[3])
+    end
+    @assert false
+end
 
 function plot_pressure_field(
     h5_path::AbstractString;
     plane::Symbol = :xy,
-    position::Real = 0.0,
-    freq::Union{Real, Nothing} = nothing
+    position::Real = 0f0,
 )
-    tolerance::Float32 = 1e-6
+    position = Float32(position)
 
-    HDF5.h5open(h5_path, "r") do file
-        # --- Read mesh and data ---
-        ni_to_xyz = HDF5.read(file["/inputs/mesh/nodes"])
-        ni_to_xyz = Float32.(ni_to_xyz)
+    file = HDF5.h5open(h5_path, "r")
 
-        sei_to_ni = HDF5.read(file["/inputs/mesh/surface_elements"])
-        sei_to_ni = convert(Matrix{Int}, sei_to_ni)
-        sei_count = size(sei_to_ni, 2)
+    ni_to_xyz = HDF5.read(file["/inputs/mesh/nodes"])
+    ni_to_xyz = Float32.(ni_to_xyz)
 
-        vei_to_ni = HDF5.read(file["/inputs/mesh/volume_elements"])
-        vei_to_ni = convert(Matrix{Int}, vei_to_ni)
-        vei_count = size(vei_to_ni, 2)
+    sei_to_ni = HDF5.read(file["/inputs/mesh/surface_elements"])
+    sei_to_ni = convert(Matrix{Int}, sei_to_ni)
+    sei_count::Int = size(sei_to_ni, 2)
 
-        pressure = HDF5.read(file["/results/pressure"])
-        pressure = Float32.(abs.(pressure))
+    vei_to_ni = HDF5.read(file["/inputs/mesh/volume_elements"])
+    vei_to_ni = convert(Matrix{Int}, vei_to_ni)
+    vei_count::Int = size(vei_to_ni, 2)
 
-        fi_to_freq = HDF5.read(file["/inputs/simulated_frequencies"])
-        fi_to_freq = Float32.(fi_to_freq)
-        fi_count = length(fi_to_freq)
+    fi_to_freq = HDF5.read(file["/inputs/simulated_frequencies"])
+    fi_to_freq = Float32.(fi_to_freq)
+    fi_count::Int = length(fi_to_freq)
 
-        # Determine initial frequency
-        fi_initial = 1
-        freq_initial = fi_to_freq[fi_initial]
+    # Determine initial frequency
+    fi_initial = 1
+    freq_initial = fi_to_freq[fi_initial]
 
-        # Plane definition
-        dim = if plane == :xy
-            3
-        elseif plane == :yz
-            1
-        elseif plane == :xz
-            2
-        else
-            error("plane must be :xy, :yz or :xz")
-        end
-        dist(ni) = ni_to_xyz[dim,ni] - position
-
-        # --- Detect element order ---
-        is_order_linear = size(vei_to_ni, 1) == 4
-
-        # --- Slice volume mesh ---
-        verts_all = GLMakie.Point3f[]
-        faces_all = GLMakie.GLTriangleFace[]
-        vertex_mappings = Vector{Vector{Tuple{Int,Float32}}}()
-
-        for vei in 1:vei_count
-            eniv_to_ni = @view vei_to_ni[:, vei]   # all node indices (4 or 10)
-
-            plane_points = Tuple{Float32,Float32,Float32}[]
-            plane_contribs = Vector{Tuple{Int,Float32}}[]
-
-            if is_order_linear
-                eniv_to_dist = [dist(eniv_to_ni[eniv]) for eniv in 1:4]
-                pos_mask = eniv_to_dist .> tolerance
-                neg_mask = eniv_to_dist .< -tolerance
-                zero_mask = abs.(eniv_to_dist) .<= tolerance
-
-                if !((any(pos_mask) && any(neg_mask)) || (count(zero_mask) > 2))
-                    continue
-                end
-
-                tet_coords = ni_to_xyz[:, eniv_to_ni]
-                eei_to_eniv = [(1,2), (1,3), (1,4), (2,3), (2,4), (3,4)]
-                for (eniv_1, eniv_2) in eei_to_eniv
-                    dist_1 = eniv_to_dist[eniv_1]
-                    dist_2 = eniv_to_dist[eniv_2]
-                    if abs(dist_1) <= tolerance && abs(dist_2) <= tolerance
-                        push!(plane_points, Tuple(tet_coords[:,eniv_1]), Tuple(tet_coords[:,eniv_2]))
-                        push!(plane_contribs, [(eniv_to_ni[eniv_1], 1.0f0)], [(eniv_to_ni[eniv_2], 1.0f0)])
-                    elseif abs(dist_1) <= tolerance
-                        push!(plane_points, Tuple(tet_coords[:,eniv_1]))
-                        push!(plane_contribs, [(eniv_to_ni[eniv_1], 1.0f0)])
-                    elseif abs(dist_2) <= tolerance
-                        push!(plane_points, Tuple(tet_coords[:,eniv_2]))
-                        push!(plane_contribs, [(eniv_to_ni[eniv_2], 1.0f0)])
-                    elseif (dist_1 > 0) != (dist_2 > 0)
-                        t = dist_1 / (dist_1 - dist_2)
-                        xyz_intersect = tet_coords[:,eniv_1] .+ t .* (tet_coords[:,eniv_2] .- tet_coords[:,eniv_1])
-                        push!(plane_points, Tuple(xyz_intersect))
-                        push!(plane_contribs, [(eniv_to_ni[eniv_1], 1.0f0 - t), (eniv_to_ni[eniv_2], t)])
-                    end
-                end
-            else
-                # # Quadratic tetrahedron slicing
-                # eei_to_eniv = [
-                #     (1,2,5),
-                #     (1,3,6),
-                #     (1,4,7),
-                #     (2,3,8),
-                #     (2,4,9),
-                #     (3,4,10)
-                # ]
-                # for (eniv_1, eniv_2, eniv_m) in eei_to_eniv
-                #     ni_1 = eniv_to_ni[eniv_1]
-                #     ni_2 = eniv_to_ni[eniv_2]
-                #     ni_m = eniv_to_ni[eniv_m]
-
-                #     # slicing coordinate for each node
-                #     p_1 = ni_to_xyz[dim, ni_1]
-                #     p_2 = ni_to_xyz[dim, ni_2]
-                #     p_m = ni_to_xyz[dim, ni_m]
-
-                #     # coefficients of quadratic d(t) = a t^2 + b t + (ci - position)
-                #     a = 2p_1 + 2p_2 - 4p_m
-                #     b = -3p_1 - p_2 + 4p_m
-                #     c = p_1 - position
-
-                #     roots = find_roots_quadratic(a, b, c, tolerance)
-                #     for t in roots
-                #         # quadratic shape functions along the edge
-                #         w_1 = (1 - t) * (1 - 2t)
-                #         w_2 = t * (2t - 1)
-                #         w_m = 4 * t * (1 - t)
-
-                #         # intersection point
-                #         x =
-                #             ni_to_xyz[1,ni_1]*w_1 +
-                #             ni_to_xyz[1,ni_2]*w_2 +
-                #             ni_to_xyz[1,ni_m]*w_m
-                #         y =
-                #             ni_to_xyz[2,ni_1]*w_1 +
-                #             ni_to_xyz[2,ni_2]*w_2 +
-                #             ni_to_xyz[2,ni_m]*w_m
-                #         z =
-                #             ni_to_xyz[3,ni_1]*w_1 +
-                #             ni_to_xyz[3,ni_2]*w_2 +
-                #             ni_to_xyz[3,ni_m]*w_m
-                #         push!(plane_points, (x, y, z))
-
-                #         # pressure mapping (only non‑negligible weights)
-                #         contribs = Tuple{Int,Float32}[]
-                #         if abs(w_1) > tolerance
-                #             push!(contribs, (ni_1, w_1))
-                #         end
-                #         if abs(w_2) > tolerance
-                #             push!(contribs, (ni_2, w_2))
-                #         end
-                #         if abs(w_m) > tolerance
-                #             push!(contribs, (ni_m, w_m))
-                #         end
-                #         push!(plane_contribs, contribs)
-                #     end
-                # end
-            end
-
-            # --- Remove duplicate intersection points ---
-            unique_pts = Tuple{Float32,Float32,Float32}[]
-            unique_maps = Vector{Tuple{Int,Float32}}[]
-            for (k, pt) in enumerate(plane_points)
-                is_new = true
-                for existing in unique_pts
-                    if LinearAlgebra.norm(collect(pt) .- collect(existing)) < 10*tolerance
-                        is_new = false
-                        break
-                    end
-                end
-                if is_new
-                    push!(unique_pts, pt)
-                    push!(unique_maps, plane_contribs[k])
-                end
-            end
-
-            n_pts = length(unique_pts)
-            if n_pts < 3
-                continue
-            end
-
-            # Order points around centroid
-            centroid = sum(collect.(unique_pts)) ./ n_pts
-            if plane == :xy
-                u = Float32.([1, 0, 0])
-                v = Float32.([0, 1, 0])
-            elseif plane == :yz
-                u = Float32.([0, 1, 0])
-                v = Float32.([0, 0, 1])
-            else
-                u = Float32.([1, 0, 0])
-                v = Float32.([0, 0, 1])
-            end
-            rel_pos = [collect(pt) .- centroid for pt in unique_pts]
-            angles = [atan(LinearAlgebra.dot(r, v), LinearAlgebra.dot(r, u)) for r in rel_pos]
-            perm = sortperm(angles)
-            ordered_pts = unique_pts[perm]
-            ordered_maps = unique_maps[perm]
-
-            v_start = length(verts_all) + 1
-            for (pt, mp) in zip(ordered_pts, ordered_maps)
-                push!(verts_all, GLMakie.Point3f(pt))
-                push!(vertex_mappings, mp)
-            end
-            for k in 2:(n_pts-1)
-                push!(faces_all, GLMakie.GLTriangleFace(v_start, v_start+k-1, v_start+k))
-            end
-        end
-
-        # color computation
-        n = length(vertex_mappings)
-        colors = Vector{Float32}(undef, n)
-        function compute_colors(fi::Int)
-            @inbounds for i in 1:n
-                colors[i] = 0.0f0 + 0.0f0*im
-                for (ni, w) in vertex_mappings[i]
-                    colors[i] += w * pressure[ni,fi]
-                end
-            end
-            return colors
-        end
-
-        # create figure
-        fig = GLMakie.Figure()
-        ax = GLMakie.Axis3(fig[1,1], aspect=:data, perspectiveness=0.5)
-        ax.title = "Pressure field"
-
-        # draw surface elements
-        segments = GLMakie.Point3f[]
-        for sei in 1:sei_count
-            ni1 = sei_to_ni[1, sei]
-            ni2 = sei_to_ni[2, sei]
-            ni3 = sei_to_ni[3, sei]
-            xyz1 = GLMakie.Point3f(ni_to_xyz[:, ni1])
-            xyz2 = GLMakie.Point3f(ni_to_xyz[:, ni2])
-            xyz3 = GLMakie.Point3f(ni_to_xyz[:, ni3])
-            push!(segments, xyz1, xyz2, xyz2, xyz3, xyz3, xyz1)
-        end
-        GLMakie.linesegments!(
-            ax, segments;
-            color = RGBA(0, 0, 0, 0.2),
-            linewidth = 1,
-            transparency = true,
-        )
-
-        mesh_obj = nothing
-        if !isempty(verts_all)
-            mesh_obj = GLMakie.mesh!(
-                ax, verts_all, faces_all;
-                color = compute_colors(fi_initial),
-                # colorrange = global_limits,
-                shading = false,
-                colormap = :rainbow1,
-                transparency = false,
-            )
-        end
-
-        if mesh_obj !== nothing
-            GLMakie.Colorbar(fig[1,2], mesh_obj, label="Pressure")
-        end
-
-        # --- Slider ---
-        slider = GLMakie.Slider(
-            fig[2, 1],
-            range = 1:fi_count,
-            startvalue = fi_initial,
-            horizontal = true,
-        )
-        label_slider = GLMakie.Label(
-            fig[2, 2],
-            "Frequency: $(freq_initial) Hz (index $fi_initial)"
-        )
-
-        on(slider.value) do fi
-            freq = fi_to_freq[fi]
-            label_slider.text = "Frequency: $(freq) Hz (index $fi)"
-            if mesh_obj !== nothing
-                mesh_obj.color = compute_colors(fi)
-            end
-        end
-
-        GLMakie.display(fig)
-        return fig
+    # Plane definition
+    dim = if plane == :xy
+        3
+    elseif plane == :yz
+        1
+    elseif plane == :xz
+        2
+    else
+        error("plane must be :xy, :yz or :xz")
     end
+
+    dist_to_plane(ni) = ni_to_xyz[dim,ni] - position
+
+    # get surface elements segments
+    sfc_segments_set::Set{Tuple{Int,Int}} = Set()
+    for sei in 1:sei_count
+        for (enis_1, enis_2) in [(1,2), (1,3), (2,3)]
+            ni_1::Int = sei_to_ni[enis_1, sei]
+            ni_2::Int = sei_to_ni[enis_2, sei]
+            if ni_1 > ni_2
+                ni_1, ni_2 = ni_2, ni_1
+            end
+            push!(sfc_segments_set, (ni_1, ni_2))
+        end
+    end
+    sfc_segments::Vector{GLMakie.Point3f} = Vector{GLMakie.Point3f}(
+        undef, 2*length(sfc_segments_set)
+    )
+    i::Int = 1
+    for segment in sfc_segments_set
+        ni1 = segment[1]
+        ni2 = segment[2]
+        xyz1 = GLMakie.Point3f(ni_to_xyz[:, ni1])
+        xyz2 = GLMakie.Point3f(ni_to_xyz[:, ni2])
+        sfc_segments[i] = xyz1
+        i += 1
+        sfc_segments[i] = xyz2
+        i += 1
+    end
+    empty!(sfc_segments_set)
+    
+    # get segments
+    segments::Dict{Tuple{Int,Int}, Vector{Int}} = Dict() # ni tuple to vei vec
+    for vei in 1:vei_count
+        for (eniv_1, eniv_2) in [(1,2), (1,3), (1,4), (2,3), (2,4), (3,4)]
+            ni_1 = vei_to_ni[eniv_1, vei]
+            ni_2 = vei_to_ni[eniv_2, vei]
+            if ni_1 > ni_2
+                ni_1, ni_2 = ni_2, ni_1
+            end
+            if !haskey(segments, (ni_1, ni_2))
+                segments[(ni_1, ni_2)] = [vei]
+            else
+                push!(segments[(ni_1, ni_2)], vei)
+            end
+        end
+    end
+
+    # evaluate which segments are cut,
+    # create the cut note (with index cni),
+    # notify tets with respective cut note (up to 4)
+    cni_to_xyz::Vector{GLMakie.Point3f} = []
+    cni_to_weights::Vector{Tuple{Int,Float32,Int,Float32}} = []
+    cut_tets::Dict{Int, Vector{Int}} = Dict() # vei to cni vector
+    for ((ni_1, ni_2), vei_vector) in segments
+        dist_1::Float32 = dist_to_plane(ni_1)
+        dist_2::Float32 = dist_to_plane(ni_2)
+        if (dist_1 >= 0f0 && dist_2 < 0f0) || (dist_1 < 0f0 && dist_2 >= 0f0)
+            t::Float32 = dist_1 / (dist_1 - dist_2)
+            w_1::Float32 = 1 - t
+            w_2::Float32 = t
+            push!(cni_to_weights, (ni_1, w_1, ni_2, w_2))
+            xyz_cut::GLMakie.Point3f = GLMakie.Point3f(
+                ni_to_xyz[:,ni_1] .+ 
+                t.*(ni_to_xyz[:,ni_2] .- ni_to_xyz[:,ni_1])
+            )
+            push!(cni_to_xyz, xyz_cut)
+            cni = length(cni_to_xyz)
+            for vei in vei_vector
+                if !haskey(cut_tets, vei)
+                    cut_tets[vei] = [cni]
+                else
+                    push!(cut_tets[vei], cni)
+                end
+            end
+        end
+    end
+    cni_count = length(cni_to_xyz);
+
+    # loop over tets to create faces
+    faces = GLMakie.GLTriangleFace[]
+    for (vei, cni_vector) in cut_tets
+        if length(cni_vector) == 3
+            push!(faces, GLMakie.GLTriangleFace(cni_vector...))
+        elseif length(cni_vector) == 4
+            function dist(cni1, cni2)
+                dims = filter!(x -> x != dim, [1,2,3])
+                return LinearAlgebra.norm(
+                    cni_to_xyz[cni1][dims] .- cni_to_xyz[cni2][dims]
+                )
+            end
+            t = 1e-6
+            (a, b, c, d) = cni_vector
+            if (dist(a,b) < t)
+                push!(faces, GLMakie.GLTriangleFace(a, c, d))
+            elseif (dist(a,c) < t) || (dist(b,c) < t)
+                push!(faces, GLMakie.GLTriangleFace(a, b, d))
+            elseif (dist(a,d) < t) || (dist(b,d) < t) || (dist(c,d) < t)
+                push!(faces, GLMakie.GLTriangleFace(a, b, c))
+            else
+                (cni_1, cni_2, cni_3, cni_4) =
+                    order_points(cni_vector, cni_to_xyz, dim)
+                push!(faces, GLMakie.GLTriangleFace(cni_1, cni_3, cni_2))
+                push!(faces, GLMakie.GLTriangleFace(cni_1, cni_3, cni_4))
+            end
+        else
+            @assert false
+        end
+    end
+
+    # color computation
+    colors::Vector{Float32} = Vector{Float32}(undef, cni_count)
+    function compute_colors(fi::Int)
+        pressure = file["/results/pressure"][:,fi]
+        for cni in 1:cni_count
+            (ni_1, w_1, ni_2, w_2) = cni_to_weights[cni]
+            colors[cni] =
+                abs(ComplexF32(pressure[ni_1])) * w_1 +
+                abs(ComplexF32(pressure[ni_2])) * w_2
+        end
+        return colors
+    end
+
+    # create figure
+    fig = GLMakie.Figure()
+    ax = GLMakie.Axis3(fig[1,1], aspect=:data, perspectiveness=0.5)
+    ax.title = "Pressure field"
+
+    # draw surface elements
+    GLMakie.linesegments!(
+        ax, sfc_segments;
+        color = RGBA(0, 0, 0, 0.2),
+        linewidth = 1,
+        transparency = true,
+    )
+
+    mesh_obj = nothing
+    if !isempty(cni_to_xyz)
+        mesh_obj = GLMakie.mesh!(
+            ax, cni_to_xyz, faces;
+            color = compute_colors(fi_initial),
+            colorrange = (0,30),
+            shading = false,
+            colormap = :rainbow1,
+            transparency = false,
+        )
+    end
+
+    if mesh_obj !== nothing
+        GLMakie.Colorbar(fig[1,2], mesh_obj, label="Pressure")
+    end
+
+    # --- Slider ---
+    slider = GLMakie.Slider(
+        fig[2, 1],
+        range = 1:fi_count,
+        startvalue = fi_initial,
+        horizontal = true,
+    )
+    label_slider = GLMakie.Label(
+        fig[2, 2],
+        "Frequency: $freq_initial Hz (index $fi_initial)"
+    )
+
+    on(slider.value) do fi
+        freq = fi_to_freq[fi]
+        label_slider.text = "Frequency: $freq Hz (index $fi)"
+        if mesh_obj !== nothing
+            mesh_obj.color = compute_colors(fi)
+        end
+    end
+
+    GLMakie.display(fig)
+
+    closed = Ref(false)
+    on(events(fig).window_open) do is_open
+        if !is_open && !closed[]
+            close(file)
+            closed[] = true
+        end
+    end
+
+    return fig
 end
