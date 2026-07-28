@@ -353,12 +353,7 @@ function order_points(
     @assert false
 end
 
-function plot_pressure_field(
-    h5_path::AbstractString;
-    plane::Symbol = :xy,
-    position::Real = 0f0,
-)
-    position = Float32(position)
+function plot_pressure_field(h5_path::AbstractString)
 
     file = HDF5.h5open(h5_path, "r")
 
@@ -377,24 +372,106 @@ function plot_pressure_field(
     fi_to_freq = Float32.(fi_to_freq)
     fi_count::Int = length(fi_to_freq)
 
-    # Determine initial frequency
-    fi_initial = 1
-    freq_initial = fi_to_freq[fi_initial]
-
-    # Plane definition
-    dim = if plane == :xy
-        3
-    elseif plane == :yz
-        1
-    elseif plane == :xz
-        2
-    else
-        error("plane must be :xy, :yz or :xz")
+    # get segments
+    segments::Dict{Tuple{Int,Int}, Vector{Int}} = Dict() # ni tuple to vei vec
+    for vei in 1:vei_count
+        for (eniv_1, eniv_2) in [(1,2), (1,3), (1,4), (2,3), (2,4), (3,4)]
+            ni_1 = vei_to_ni[eniv_1, vei]
+            ni_2 = vei_to_ni[eniv_2, vei]
+            if ni_1 > ni_2
+                ni_1, ni_2 = ni_2, ni_1
+            end
+            if !haskey(segments, (ni_1, ni_2))
+                segments[(ni_1, ni_2)] = [vei]
+            else
+                push!(segments[(ni_1, ni_2)], vei)
+            end
+        end
     end
 
-    dist_to_plane(ni) = ni_to_xyz[dim,ni] - position
+    # compute the sliced surface for a single plane -- now returns fresh,
+    # self-contained data instead of appending to shared arrays, so each
+    # plane (x/y/z) can be computed, stored, and updated independently.
+    function compute_plane_cut(dim::Int, position::Float32)
+        cni_to_xyz_local::Vector{GLMakie.Point3f} = []
+        cni_to_weights_local::Vector{Tuple{Int,Float32,Int,Float32}} = []
+        faces_local::Vector{GLMakie.GLTriangleFace} = []
+        cut_tets::Dict{Int, Vector{Int}} = Dict() # vei to cni vector
 
-    # get surface elements segments
+        for ((ni_1, ni_2), vei_vector) in segments
+            dist_1::Float32 = ni_to_xyz[dim, ni_1] - position
+            dist_2::Float32 = ni_to_xyz[dim, ni_2] - position
+            if (dist_1 >= 0f0 && dist_2 < 0f0) || (dist_1 < 0f0 && dist_2 >= 0f0)
+                t::Float32 = dist_1 / (dist_1 - dist_2)
+                w_1::Float32 = 1 - t
+                w_2::Float32 = t
+                push!(cni_to_weights_local, (ni_1, w_1, ni_2, w_2))
+                xyz_cut::GLMakie.Point3f = GLMakie.Point3f(
+                    ni_to_xyz[:,ni_1] .+
+                    t.*(ni_to_xyz[:,ni_2] .- ni_to_xyz[:,ni_1])
+                )
+                push!(cni_to_xyz_local, xyz_cut)
+                cni = length(cni_to_xyz_local)
+                for vei in vei_vector
+                    if !haskey(cut_tets, vei)
+                        cut_tets[vei] = [cni]
+                    else
+                        push!(cut_tets[vei], cni)
+                    end
+                end
+            end
+        end
+
+        # loop over tets to create faces
+        for (vei, cni_vector) in cut_tets
+            if length(cni_vector) == 3
+                push!(faces_local, GLMakie.GLTriangleFace(cni_vector...))
+            elseif length(cni_vector) == 4
+                function dist(cni1, cni2)
+                    dims = filter!(x -> x != dim, [1,2,3])
+                    return LinearAlgebra.norm(
+                        cni_to_xyz_local[cni1][dims] .- cni_to_xyz_local[cni2][dims]
+                    )
+                end
+                t = 1e-6
+                (a, b, c, d) = cni_vector
+                if (dist(a,b) < t)
+                    push!(faces_local, GLMakie.GLTriangleFace(a, c, d))
+                elseif (dist(a,c) < t) || (dist(b,c) < t)
+                    push!(faces_local, GLMakie.GLTriangleFace(a, b, d))
+                elseif (dist(a,d) < t) || (dist(b,d) < t) || (dist(c,d) < t)
+                    push!(faces_local, GLMakie.GLTriangleFace(a, b, c))
+                else
+                    (cni_1, cni_2, cni_3, cni_4) =
+                        order_points(cni_vector, cni_to_xyz_local, dim)
+                    push!(faces_local, GLMakie.GLTriangleFace(cni_1, cni_3, cni_2))
+                    push!(faces_local, GLMakie.GLTriangleFace(cni_1, cni_3, cni_4))
+                end
+            else
+                @assert false
+            end
+        end
+
+        return cni_to_xyz_local, faces_local, cni_to_weights_local
+    end
+
+    # color computation for a given plane's weights at a given frequency index
+    function compute_colors(
+        cni_to_weights_local::Vector{Tuple{Int,Float32,Int,Float32}},
+        fi::Int
+    )
+        pressure = file["/results/pressure"][:,fi]
+        colors_local = Vector{Float32}(undef, length(cni_to_weights_local))
+        for cni in eachindex(cni_to_weights_local)
+            (ni_1, w_1, ni_2, w_2) = cni_to_weights_local[cni]
+            colors_local[cni] =
+                abs(ComplexF32(pressure[ni_1])) * w_1 +
+                abs(ComplexF32(pressure[ni_2])) * w_2
+        end
+        return colors_local
+    end
+
+    # get surface elements segments to plot boundaries
     sfc_segments_set::Set{Tuple{Int,Int}} = Set()
     for sei in 1:sei_count
         for (enis_1, enis_2) in [(1,2), (1,3), (2,3)]
@@ -421,98 +498,6 @@ function plot_pressure_field(
         i += 1
     end
     empty!(sfc_segments_set)
-    
-    # get segments
-    segments::Dict{Tuple{Int,Int}, Vector{Int}} = Dict() # ni tuple to vei vec
-    for vei in 1:vei_count
-        for (eniv_1, eniv_2) in [(1,2), (1,3), (1,4), (2,3), (2,4), (3,4)]
-            ni_1 = vei_to_ni[eniv_1, vei]
-            ni_2 = vei_to_ni[eniv_2, vei]
-            if ni_1 > ni_2
-                ni_1, ni_2 = ni_2, ni_1
-            end
-            if !haskey(segments, (ni_1, ni_2))
-                segments[(ni_1, ni_2)] = [vei]
-            else
-                push!(segments[(ni_1, ni_2)], vei)
-            end
-        end
-    end
-
-    # evaluate which segments are cut,
-    # create the cut note (with index cni),
-    # notify tets with respective cut note (up to 4)
-    cni_to_xyz::Vector{GLMakie.Point3f} = []
-    cni_to_weights::Vector{Tuple{Int,Float32,Int,Float32}} = []
-    cut_tets::Dict{Int, Vector{Int}} = Dict() # vei to cni vector
-    for ((ni_1, ni_2), vei_vector) in segments
-        dist_1::Float32 = dist_to_plane(ni_1)
-        dist_2::Float32 = dist_to_plane(ni_2)
-        if (dist_1 >= 0f0 && dist_2 < 0f0) || (dist_1 < 0f0 && dist_2 >= 0f0)
-            t::Float32 = dist_1 / (dist_1 - dist_2)
-            w_1::Float32 = 1 - t
-            w_2::Float32 = t
-            push!(cni_to_weights, (ni_1, w_1, ni_2, w_2))
-            xyz_cut::GLMakie.Point3f = GLMakie.Point3f(
-                ni_to_xyz[:,ni_1] .+ 
-                t.*(ni_to_xyz[:,ni_2] .- ni_to_xyz[:,ni_1])
-            )
-            push!(cni_to_xyz, xyz_cut)
-            cni = length(cni_to_xyz)
-            for vei in vei_vector
-                if !haskey(cut_tets, vei)
-                    cut_tets[vei] = [cni]
-                else
-                    push!(cut_tets[vei], cni)
-                end
-            end
-        end
-    end
-    cni_count = length(cni_to_xyz);
-
-    # loop over tets to create faces
-    faces = GLMakie.GLTriangleFace[]
-    for (vei, cni_vector) in cut_tets
-        if length(cni_vector) == 3
-            push!(faces, GLMakie.GLTriangleFace(cni_vector...))
-        elseif length(cni_vector) == 4
-            function dist(cni1, cni2)
-                dims = filter!(x -> x != dim, [1,2,3])
-                return LinearAlgebra.norm(
-                    cni_to_xyz[cni1][dims] .- cni_to_xyz[cni2][dims]
-                )
-            end
-            t = 1e-6
-            (a, b, c, d) = cni_vector
-            if (dist(a,b) < t)
-                push!(faces, GLMakie.GLTriangleFace(a, c, d))
-            elseif (dist(a,c) < t) || (dist(b,c) < t)
-                push!(faces, GLMakie.GLTriangleFace(a, b, d))
-            elseif (dist(a,d) < t) || (dist(b,d) < t) || (dist(c,d) < t)
-                push!(faces, GLMakie.GLTriangleFace(a, b, c))
-            else
-                (cni_1, cni_2, cni_3, cni_4) =
-                    order_points(cni_vector, cni_to_xyz, dim)
-                push!(faces, GLMakie.GLTriangleFace(cni_1, cni_3, cni_2))
-                push!(faces, GLMakie.GLTriangleFace(cni_1, cni_3, cni_4))
-            end
-        else
-            @assert false
-        end
-    end
-
-    # color computation
-    colors::Vector{Float32} = Vector{Float32}(undef, cni_count)
-    function compute_colors(fi::Int)
-        pressure = file["/results/pressure"][:,fi]
-        for cni in 1:cni_count
-            (ni_1, w_1, ni_2, w_2) = cni_to_weights[cni]
-            colors[cni] =
-                abs(ComplexF32(pressure[ni_1])) * w_1 +
-                abs(ComplexF32(pressure[ni_2])) * w_2
-        end
-        return colors
-    end
 
     # create figure
     fig = GLMakie.Figure()
@@ -527,41 +512,121 @@ function plot_pressure_field(
         transparency = true,
     )
 
-    mesh_obj = nothing
-    if !isempty(cni_to_xyz)
-        mesh_obj = GLMakie.mesh!(
-            ax, cni_to_xyz, faces;
-            color = compute_colors(fi_initial),
-            colorrange = (0,30),
-            shading = false,
-            colormap = :rainbow1,
-            transparency = false,
-        )
+    GLMakie.Colorbar(
+        fig[1,2];
+        colormap = :rainbow1,
+        colorrange = (0, 30),
+        label = "Pressure",
+    )
+
+    # bounding box
+    x_min = minimum(ni_to_xyz[1,:])
+    x_max = maximum(ni_to_xyz[1,:])
+    y_min = minimum(ni_to_xyz[2,:])
+    y_max = maximum(ni_to_xyz[2,:])
+    z_min = minimum(ni_to_xyz[3,:])
+    z_max = maximum(ni_to_xyz[3,:])
+
+    # per-plane mutable state
+    fi::Ref{Int} = Ref(1)
+    dim_names = ["x", "y", "z"]
+    positions = [(x_min + x_max)/2, (y_min + y_max)/2, (z_min + z_max)/2]
+    visible_flags = [true, true, true]
+    mesh_objs::Vector{Any} = [nothing, nothing, nothing]
+    weights_data::Vector{Vector{Tuple{Int,Float32,Int,Float32}}} = [[], [], []]
+
+    function update_plane!(dim::Int)
+        if mesh_objs[dim] !== nothing
+            GLMakie.delete!(ax, mesh_objs[dim])
+            mesh_objs[dim] = nothing
+        end
+
+        if !visible_flags[dim]
+            weights_data[dim] = []
+            return
+        end
+
+        cni_to_xyz_local, faces_local, cni_to_weights_local =
+            compute_plane_cut(dim, positions[dim])
+        weights_data[dim] = cni_to_weights_local
+
+        if !isempty(cni_to_xyz_local)
+            colors_local = compute_colors(cni_to_weights_local, fi[])
+            mesh_objs[dim] = GLMakie.mesh!(
+                ax, cni_to_xyz_local, faces_local;
+                color = colors_local,
+                colorrange = (0,30),
+                shading = false,
+                colormap = :rainbow1,
+                transparency = false,
+            )
+        end
     end
 
-    if mesh_obj !== nothing
-        GLMakie.Colorbar(fig[1,2], mesh_obj, label="Pressure")
-    end
-
-    # --- Slider ---
+    # frequency slider
+    freq_slider_text = "Frequency: $(fi_to_freq[fi[]]) Hz (index $(fi[]))"
     slider = GLMakie.Slider(
         fig[2, 1],
         range = 1:fi_count,
-        startvalue = fi_initial,
+        startvalue = fi[],
         horizontal = true,
     )
     label_slider = GLMakie.Label(
         fig[2, 2],
-        "Frequency: $freq_initial Hz (index $fi_initial)"
+        freq_slider_text
     )
-
-    on(slider.value) do fi
-        freq = fi_to_freq[fi]
-        label_slider.text = "Frequency: $freq Hz (index $fi)"
-        if mesh_obj !== nothing
-            mesh_obj.color = compute_colors(fi)
+    on(slider.value) do fi_input
+        fi[] = fi_input
+        label_slider.text = freq_slider_text
+        for dim in (1,2,3)
+            if mesh_objs[dim] !== nothing
+                mesh_objs[dim].color = compute_colors(weights_data[dim], fi[])
+            end
         end
     end
+
+    # --- Plane controls: label, position textbox, show/hide toggle ---
+    limits = [(x_min, x_max), (y_min, y_max), (z_min, z_max)]
+    controls_grid = fig[3, 1:2] = GLMakie.GridLayout()
+    col = 1
+    for dim in (1, 2, 3)
+        GLMakie.Label(controls_grid[1, col], "$(dim_names[dim]):")
+        col += 1
+
+        # toggle
+        toggle = GLMakie.Toggle(controls_grid[1, col], active = true)
+        on(toggle.active) do active
+            visible_flags[dim] = active
+            update_plane!(dim)
+        end
+        col += 1
+
+        # textbox
+        (l, u) = limits[dim]
+        textbox = GLMakie.Textbox(
+            controls_grid[1, col],
+            placeholder = first(string(l), 4) * " | " * first(string(u), 4),
+            stored_string = first(string(positions[dim]), 5),
+            validator = s -> begin
+                v = tryparse(Float32, s)
+                v !== nothing && l <= v <= u
+            end,
+            width = 100,
+        )
+        on(textbox.displayed_string) do s
+            v = tryparse(Float32, s)
+            if v !== nothing
+                positions[dim] = v
+                update_plane!(dim)
+            end
+        end
+        col += 1
+    end
+
+    # initial draw for all three planes
+    update_plane!(1)
+    update_plane!(2)
+    update_plane!(3)
 
     GLMakie.display(fig)
 
