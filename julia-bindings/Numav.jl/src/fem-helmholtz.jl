@@ -45,7 +45,7 @@ Assigns acoustic material properties to a volumetric region of the mesh, identif
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
-| `simulation` | `Simulation` | the simulation instance |
+| `simulation` | `Simulation` | The simulation instance |
 | **Keyword arguments** | | |
 | `physical_group` | `Integer`, `Vector{Integer}` | Physical group ID (or vector of IDs) from the mesh |
 | `density` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Density in kg/m³ |
@@ -107,7 +107,7 @@ The specific acoustic impedance is the ratio of complex amplitude of acoustic pr
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
-| `simulation` | `Simulation` | the simulation instance |
+| `simulation` | `Simulation` | The simulation instance |
 | **Keyword arguments** | | |
 | `physical_group` | `Integer`, `Vector{Integer}` | Physical group ID of the boundary surface |
 | `specific_acoustic_impedance` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | specific surface acoustic impedance (Pa·s/m) |
@@ -151,11 +151,11 @@ function add_surface_material!(
 end
 
 """
-Sources can be applied either at a specific point in space (via `coordinates`) or over a surface region (via `physical_group`). Three excitation types are supported: `volume_velocity`, `particle velocity`, and `pressure`.
+Adds sound sources either at a specific point in space (via `coordinates`) or over a surface region (via `physical_group`). Three excitation types are supported: `volume_velocity`, `particle velocity`, and `pressure`.
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
-| `simulation` | `Simulation` | the simulation instance |
+| `simulation` | `Simulation` | The simulation instance |
 | **Keyword arguments** | | |
 | `coordinates` | `Vector{Real}`, `Vector{Vector{Real}}` | `[x, y, z]` location of a point source in m |
 | `physical_group` | `Integer`, `Vector{Integer}` | Physical group ID of a surface or volume region |
@@ -308,8 +308,9 @@ end
 import HDF5
 import GLMakie
 import LinearAlgebra
+import Statistics
 
-function order_points(
+function _order_points(
     cni::Vector{Int},
     cni_to_xyz::Vector{GLMakie.Point3f},
     dimension_to_eliminate::Int
@@ -353,9 +354,38 @@ function order_points(
     @assert false
 end
 
-function plot_pressure_field(h5_path::AbstractString)
+"""
+Plots a 3D graph of the pressure field for all space and frequncies.
 
-    file = HDF5.h5open(h5_path, "r")
+| Positional arguments | Type | Description |
+|:--|:--|:--|
+| `file_path` | `String` | Result file path (`.h5`) |
+| **Keyword arguments** | | |
+| `db` | `Bool` | Controls if the plot uses the decibel scale. Defaults to `false` |
+
+---
+# Examples
+
+> ```julia
+> plot_pressure_field("result.h5")
+> ```
+"""
+function plot_pressure_field(file_path::AbstractString; db::Bool = false)
+    #TODO: FIX DOCSTRING
+    file = HDF5.h5open(file_path, "r")
+
+    get_sim_type(att::String) = attrs(file["/simulation_type"])[att]
+    if (
+        get_sim_type("numerical_method") != "finite_element_method" ||
+        get_sim_type("equation") != "helmholtz" ||
+        get_sim_type("element_shape") != "tetrahedron" ||
+        (   
+            get_sim_type("element_order") != "linear" &&
+            get_sim_type("element_order") != "quadratic"
+        )
+    )
+        _throw_simulation_not_applicable()
+    end
 
     ni_to_xyz = HDF5.read(file["/inputs/mesh/nodes"])
     ni_to_xyz = Float32.(ni_to_xyz)
@@ -367,6 +397,15 @@ function plot_pressure_field(h5_path::AbstractString)
     vei_to_ni = HDF5.read(file["/inputs/mesh/volume_elements"])
     vei_to_ni = convert(Matrix{Int}, vei_to_ni)
     vei_count::Int = size(vei_to_ni, 2)
+
+    if get_sim_type("element_order") == "quadratic"
+        @warn(
+            "`plot_pressure_field` is not accurate for second order elements."*
+            " The graph shown does not account for the non-vertex nodes"
+        )
+        sei_to_ni = sei_to_ni[1:3,:]
+        vei_to_ni = vei_to_ni[1:4,:]
+    end
 
     fi_to_freq = HDF5.read(file["/inputs/simulated_frequencies"])
     fi_to_freq = Float32.(fi_to_freq)
@@ -389,29 +428,63 @@ function plot_pressure_field(h5_path::AbstractString)
         end
     end
 
-    # compute the sliced surface for a single plane -- now returns fresh,
-    # self-contained data instead of appending to shared arrays, so each
-    # plane (x/y/z) can be computed, stored, and updated independently.
-    function compute_plane_cut(dim::Int, position::Float32)
-        cni_to_xyz_local::Vector{GLMakie.Point3f} = []
-        cni_to_weights_local::Vector{Tuple{Int,Float32,Int,Float32}} = []
-        faces_local::Vector{GLMakie.GLTriangleFace} = []
-        cut_tets::Dict{Int, Vector{Int}} = Dict() # vei to cni vector
+    # bounding box
+    (x_min::Float32, x_max::Float32) = extrema(ni_to_xyz[1,:])
+    (y_min::Float32, y_max::Float32) = extrema(ni_to_xyz[2,:])
+    (z_min::Float32, z_max::Float32) = extrema(ni_to_xyz[3,:])
 
+    function pressure_calc_func(p::ComplexF32)
+        if db
+            return 20*log10( abs(p) / (sqrt(2)*20e-6) )
+        else
+            return abs(p)
+        end
+    end
+
+    # pressure range
+    p_all = pressure_calc_func.(ComplexF32.(file["/results/pressure"][:,:]))
+    if db
+        p_all = filter(isfinite, p_all) # remove all NaN
+    end
+    (p_min::Float32, p_max::Float32) = extrema(p_all)
+    p_mean = Statistics.mean(p_all)
+    p_std = Statistics.std(p_all)
+    p_all = []
+
+    # per-plane mutable state
+    cni_to_xyz::Vector{Vector{GLMakie.Point3f}} = [[],[],[]]
+    cni_to_weights::Vector{Vector{Tuple{Int,Float32,Int,Float32}}} = [[],[],[]]
+    faces::Vector{Vector{GLMakie.GLTriangleFace}} = [[],[],[]]
+    colors::Vector{Vector{Float32}} = [[],[],[]]
+    fi::Int = 1
+    dim_names::Vector{String} = ["yz", "xz", "xy"]
+    positions::Vector{Float32} = [
+        (x_min + x_max)/2, (y_min + y_max)/2, (z_min + z_max)/2
+    ]
+    visible_flags = [true, true, true]
+    mesh_objs::Vector{Any} = [nothing, nothing, nothing]
+
+    # compute the sliced surface for a single plane
+    function compute_plane_cut(dim::Int, position::Float32)
+        empty!(cni_to_xyz[dim])
+        empty!(cni_to_weights[dim])
+        empty!(faces[dim])
+
+        cut_tets::Dict{Int, Vector{Int}} = Dict() # vei to cni vector
         for ((ni_1, ni_2), vei_vector) in segments
-            dist_1::Float32 = ni_to_xyz[dim, ni_1] - position
-            dist_2::Float32 = ni_to_xyz[dim, ni_2] - position
-            if (dist_1 >= 0f0 && dist_2 < 0f0) || (dist_1 < 0f0 && dist_2 >= 0f0)
-                t::Float32 = dist_1 / (dist_1 - dist_2)
+            dist1::Float32 = ni_to_xyz[dim, ni_1] - position
+            dist2::Float32 = ni_to_xyz[dim, ni_2] - position
+            if (dist1 >= 0f0 && dist2 < 0f0) || (dist1 < 0f0 && dist2 >= 0f0)
+                t::Float32 = dist1 / (dist1 - dist2)
                 w_1::Float32 = 1 - t
                 w_2::Float32 = t
-                push!(cni_to_weights_local, (ni_1, w_1, ni_2, w_2))
+                push!(cni_to_weights[dim], (ni_1, w_1, ni_2, w_2))
                 xyz_cut::GLMakie.Point3f = GLMakie.Point3f(
                     ni_to_xyz[:,ni_1] .+
                     t.*(ni_to_xyz[:,ni_2] .- ni_to_xyz[:,ni_1])
                 )
-                push!(cni_to_xyz_local, xyz_cut)
-                cni = length(cni_to_xyz_local)
+                push!(cni_to_xyz[dim], xyz_cut)
+                cni = length(cni_to_xyz[dim])
                 for vei in vei_vector
                     if !haskey(cut_tets, vei)
                         cut_tets[vei] = [cni]
@@ -421,54 +494,53 @@ function plot_pressure_field(h5_path::AbstractString)
                 end
             end
         end
+        empty!(colors[dim])
+        colors[dim] = Vector{Float32}(undef, length(cni_to_xyz[dim]))
 
         # loop over tets to create faces
         for (vei, cni_vector) in cut_tets
             if length(cni_vector) == 3
-                push!(faces_local, GLMakie.GLTriangleFace(cni_vector...))
+                push!(faces[dim], GLMakie.GLTriangleFace(cni_vector...))
             elseif length(cni_vector) == 4
                 function dist(cni1, cni2)
                     dims = filter!(x -> x != dim, [1,2,3])
                     return LinearAlgebra.norm(
-                        cni_to_xyz_local[cni1][dims] .- cni_to_xyz_local[cni2][dims]
+                        cni_to_xyz[dim][cni1][dims] .-
+                        cni_to_xyz[dim][cni2][dims]
                     )
                 end
                 t = 1e-6
                 (a, b, c, d) = cni_vector
                 if (dist(a,b) < t)
-                    push!(faces_local, GLMakie.GLTriangleFace(a, c, d))
+                    push!(faces[dim], GLMakie.GLTriangleFace(a, c, d))
                 elseif (dist(a,c) < t) || (dist(b,c) < t)
-                    push!(faces_local, GLMakie.GLTriangleFace(a, b, d))
+                    push!(faces[dim], GLMakie.GLTriangleFace(a, b, d))
                 elseif (dist(a,d) < t) || (dist(b,d) < t) || (dist(c,d) < t)
-                    push!(faces_local, GLMakie.GLTriangleFace(a, b, c))
+                    push!(faces[dim], GLMakie.GLTriangleFace(a, b, c))
                 else
                     (cni_1, cni_2, cni_3, cni_4) =
-                        order_points(cni_vector, cni_to_xyz_local, dim)
-                    push!(faces_local, GLMakie.GLTriangleFace(cni_1, cni_3, cni_2))
-                    push!(faces_local, GLMakie.GLTriangleFace(cni_1, cni_3, cni_4))
+                        _order_points(cni_vector, cni_to_xyz[dim], dim)
+                    push!(faces[dim], GLMakie.GLTriangleFace(cni_1, cni_3, cni_2))
+                    push!(faces[dim], GLMakie.GLTriangleFace(cni_1, cni_3, cni_4))
                 end
             else
                 @assert false
             end
         end
-
-        return cni_to_xyz_local, faces_local, cni_to_weights_local
     end
 
     # color computation for a given plane's weights at a given frequency index
-    function compute_colors(
-        cni_to_weights_local::Vector{Tuple{Int,Float32,Int,Float32}},
-        fi::Int
-    )
+    function compute_colors(dim::Int, fi::Int)
         pressure = file["/results/pressure"][:,fi]
-        colors_local = Vector{Float32}(undef, length(cni_to_weights_local))
-        for cni in eachindex(cni_to_weights_local)
-            (ni_1, w_1, ni_2, w_2) = cni_to_weights_local[cni]
-            colors_local[cni] =
-                abs(ComplexF32(pressure[ni_1])) * w_1 +
-                abs(ComplexF32(pressure[ni_2])) * w_2
+        for cni in eachindex(cni_to_weights[dim])
+            (ni_1, w_1, ni_2, w_2) = cni_to_weights[dim][cni]
+            colors[dim][cni] =
+                pressure_calc_func(
+                    ComplexF32(pressure[ni_1]) * w_1 +
+                    ComplexF32(pressure[ni_2]) * w_2
+                )
         end
-        return colors_local
+        return colors[dim]
     end
 
     # get surface elements segments to plot boundaries
@@ -500,9 +572,10 @@ function plot_pressure_field(h5_path::AbstractString)
     empty!(sfc_segments_set)
 
     # create figure
+    GLMakie.activate!(title = "Pressure field")
     fig = GLMakie.Figure()
     ax = GLMakie.Axis3(fig[1,1], aspect=:data, perspectiveness=0.5)
-    ax.title = "Pressure field"
+    ax.title = ""
 
     # draw surface elements
     GLMakie.linesegments!(
@@ -512,50 +585,36 @@ function plot_pressure_field(h5_path::AbstractString)
         transparency = true,
     )
 
+    color_range = ( max(p_mean - 2.5*p_std, 0), p_mean + 2.5*p_std)
+
+    color_bar_label = if db
+        "Sound pressure level (dB, ref. 20 \u03bcPa)"
+    else
+        "Sound pressure amplitude (Pa)"
+    end
     GLMakie.Colorbar(
         fig[1,2];
         colormap = :rainbow1,
-        colorrange = (0, 30),
-        label = "Pressure",
+        colorrange = color_range,
+        label = color_bar_label,
     )
 
-    # bounding box
-    x_min = minimum(ni_to_xyz[1,:])
-    x_max = maximum(ni_to_xyz[1,:])
-    y_min = minimum(ni_to_xyz[2,:])
-    y_max = maximum(ni_to_xyz[2,:])
-    z_min = minimum(ni_to_xyz[3,:])
-    z_max = maximum(ni_to_xyz[3,:])
-
-    # per-plane mutable state
-    fi::Ref{Int} = Ref(1)
-    dim_names = ["x", "y", "z"]
-    positions = [(x_min + x_max)/2, (y_min + y_max)/2, (z_min + z_max)/2]
-    visible_flags = [true, true, true]
-    mesh_objs::Vector{Any} = [nothing, nothing, nothing]
-    weights_data::Vector{Vector{Tuple{Int,Float32,Int,Float32}}} = [[], [], []]
-
-    function update_plane!(dim::Int)
+    function update_plane(dim::Int)
         if mesh_objs[dim] !== nothing
             GLMakie.delete!(ax, mesh_objs[dim])
             mesh_objs[dim] = nothing
         end
-
         if !visible_flags[dim]
-            weights_data[dim] = []
             return
         end
 
-        cni_to_xyz_local, faces_local, cni_to_weights_local =
-            compute_plane_cut(dim, positions[dim])
-        weights_data[dim] = cni_to_weights_local
-
-        if !isempty(cni_to_xyz_local)
-            colors_local = compute_colors(cni_to_weights_local, fi[])
+        compute_plane_cut(dim, positions[dim])
+        if !isempty(cni_to_xyz[dim])
+            compute_colors(dim, fi)
             mesh_objs[dim] = GLMakie.mesh!(
-                ax, cni_to_xyz_local, faces_local;
-                color = colors_local,
-                colorrange = (0,30),
+                ax, cni_to_xyz[dim], faces[dim];
+                color = colors[dim],
+                colorrange = color_range,
                 shading = false,
                 colormap = :rainbow1,
                 transparency = false,
@@ -564,32 +623,33 @@ function plot_pressure_field(h5_path::AbstractString)
     end
 
     # frequency slider
-    freq_slider_text = "Frequency: $(fi_to_freq[fi[]]) Hz (index $(fi[]))"
+    freq_slider_text(fi::Int) = "Frequency: $(fi_to_freq[fi]) Hz (index $(fi))"
     slider = GLMakie.Slider(
         fig[2, 1],
         range = 1:fi_count,
-        startvalue = fi[],
+        startvalue = fi,
         horizontal = true,
     )
     label_slider = GLMakie.Label(
         fig[2, 2],
-        freq_slider_text
+        freq_slider_text(1)
     )
     on(slider.value) do fi_input
-        fi[] = fi_input
-        label_slider.text = freq_slider_text
+        fi = fi_input
+        label_slider.text = freq_slider_text(fi)
         for dim in (1,2,3)
             if mesh_objs[dim] !== nothing
-                mesh_objs[dim].color = compute_colors(weights_data[dim], fi[])
+                compute_colors(dim, fi)
+                mesh_objs[dim].color = colors[dim]
             end
         end
     end
 
-    # --- Plane controls: label, position textbox, show/hide toggle ---
+    # plane controls: label, position textbox, show/hide toggle
     limits = [(x_min, x_max), (y_min, y_max), (z_min, z_max)]
     controls_grid = fig[3, 1:2] = GLMakie.GridLayout()
     col = 1
-    for dim in (1, 2, 3)
+    for dim in (3, 2, 1)
         GLMakie.Label(controls_grid[1, col], "$(dim_names[dim]):")
         col += 1
 
@@ -597,7 +657,7 @@ function plot_pressure_field(h5_path::AbstractString)
         toggle = GLMakie.Toggle(controls_grid[1, col], active = true)
         on(toggle.active) do active
             visible_flags[dim] = active
-            update_plane!(dim)
+            update_plane(dim)
         end
         col += 1
 
@@ -617,16 +677,16 @@ function plot_pressure_field(h5_path::AbstractString)
             v = tryparse(Float32, s)
             if v !== nothing
                 positions[dim] = v
-                update_plane!(dim)
+                update_plane(dim)
             end
         end
         col += 1
     end
 
     # initial draw for all three planes
-    update_plane!(1)
-    update_plane!(2)
-    update_plane!(3)
+    update_plane(1)
+    update_plane(2)
+    update_plane(3)
 
     GLMakie.display(fig)
 
