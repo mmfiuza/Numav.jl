@@ -380,7 +380,7 @@ function plot_pressure_field(
 )
     file = HDF5.h5open(file_path, "r")
 
-    get_sim_type(att::String) = attrs(file["/simulation_type"])[att]
+    get_sim_type(att::String) = HDF5.attrs(file["/simulation_type"])[att]
     if (
         get_sim_type("numerical_method") != "finite_element_method" ||
         get_sim_type("equation") != "helmholtz" ||
@@ -587,7 +587,7 @@ function plot_pressure_field(
     # draw surface elements
     GLMakie.linesegments!(
         ax, sfc_segments;
-        color = RGBA(0, 0, 0, 0.2),
+        color = GLMakie.RGBA(0, 0, 0, 0.2),
         linewidth = 1,
         transparency = true,
     )
@@ -612,7 +612,7 @@ function plot_pressure_field(
         startvalues = color_range,
         horizontal = false,
     )
-    on(range_slider.interval) do interval
+    GLMakie.on(range_slider.interval) do interval
         color_range = interval
         colorbar.colorrange = color_range
         for dim in (1,2,3)
@@ -657,7 +657,7 @@ function plot_pressure_field(
         fig[2, 2],
         freq_slider_text(1)
     )
-    on(slider.value) do fi_input
+    GLMakie.on(slider.value) do fi_input
         fi = fi_input
         label_slider.text = freq_slider_text(fi)
         for dim in (1,2,3)
@@ -678,7 +678,7 @@ function plot_pressure_field(
 
         # toggle
         toggle = GLMakie.Toggle(controls_grid[1, col], active = true)
-        on(toggle.active) do active
+        GLMakie.on(toggle.active) do active
             visible_flags[dim] = active
             update_plane(dim)
         end
@@ -696,7 +696,7 @@ function plot_pressure_field(
             end,
             width = 100,
         )
-        on(textbox.displayed_string) do s
+        GLMakie.on(textbox.displayed_string) do s
             v = tryparse(Float32, s)
             if v !== nothing
                 positions[dim] = v
@@ -714,7 +714,7 @@ function plot_pressure_field(
     GLMakie.display(fig)
 
     closed = Ref(false)
-    on(events(fig).window_open) do is_open
+    GLMakie.on(GLMakie.events(fig).window_open) do is_open
         if !is_open && !closed[]
             close(file)
             closed[] = true

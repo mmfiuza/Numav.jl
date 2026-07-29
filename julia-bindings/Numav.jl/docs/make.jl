@@ -1,12 +1,14 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
-using Documenter, Numav, Markdown
+import Documenter
+import Markdown
+using Numav
 
 function parse_md_file(filename)
     return Markdown.parse(read(joinpath(@__DIR__, "src", filename), String))
 end
 
-makedocs(
+Documenter.makedocs(
     sitename="Numav.jl",
     # modules = [Numav], # error if some docstring is forgotten to be showed
     meta = Dict(:CollapsedDocStrings => true),
@@ -27,7 +29,7 @@ makedocs(
     ],
 )
 
-deploydocs(
+Documenter.deploydocs(
     repo = "github.com/mmfiuza/numav.git",
     devbranch = "main",
 )

@@ -1,5 +1,5 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
-using LiveServer
+import LiveServer
 
-serve(dir="/workspace/julia-bindings/Numav.jl/docs/build")
+LiveServer.serve(dir="/workspace/julia-bindings/Numav.jl/docs/build")

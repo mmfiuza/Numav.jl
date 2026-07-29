@@ -1,14 +1,14 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
 # include dependencies
-using Interpolations
-using DelimitedFiles
+import Interpolations
+import DelimitedFiles
 
 # type aliases
 const Fdpq = Union{Function, Number, AbstractString}
 
 function _read_fdpq_table(filename::AbstractString)
-    data = readdlm(filename, ',')
+    data = DelimitedFiles.readdlm(filename, ',')
     freq = Float64.(data[:, 1])
     fdpqv = Complex.(Float64.(data[:, 2]), Float64.(data[:, 3]))
     return (freq, fdpqv)
@@ -18,8 +18,8 @@ function _fdpq_to_function(fdpqv::Fdpq)::Function
     if fdpqv isa Number
         return (_ -> fdpqv)
     elseif fdpqv isa AbstractString
-        interp = linear_interpolation(_read_fdpq_table(fdpqv)...) 
-        return (x -> interp(x))
+        intrp = Interpolations.linear_interpolation(_read_fdpq_table(fdpqv)...) 
+        return (x -> intrp(x))
     elseif fdpqv isa Function
         return fdpqv
     end
