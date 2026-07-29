@@ -44,11 +44,11 @@ Assigns acoustic material properties to a volumetric region of the mesh, identif
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
-| `simulation` | `Simulation` | The simulation instance |
+| `simulation` | `Simulation` | The simulation instance. |
 | **Keyword arguments** | | |
-| `physical_group` | `Integer`, `Vector{Integer}` | Physical group ID (or vector of IDs) from the mesh |
-| `density` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Density in kg/m³ |
-| `speed_of_sound` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Speed of sound in m/s |
+| `physical_group` | `Integer`, `Vector{Integer}` | Physical group ID (or vector of IDs) from the mesh. |
+| `density` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Density in kg/m³. |
+| `speed_of_sound` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Speed of sound in m/s. |
 
 ---
 # Examples
@@ -106,10 +106,10 @@ The specific acoustic impedance is the ratio of complex amplitude of acoustic pr
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
-| `simulation` | `Simulation` | The simulation instance |
+| `simulation` | `Simulation` | The simulation instance. |
 | **Keyword arguments** | | |
-| `physical_group` | `Integer`, `Vector{Integer}` | Physical group ID of the boundary surface |
-| `specific_acoustic_impedance` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | specific surface acoustic impedance (Pa·s/m) |
+| `physical_group` | `Integer`, `Vector{Integer}` | Physical group ID of the boundary surface. |
+| `specific_acoustic_impedance` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | specific surface acoustic impedance (Pa·s/m). |
 
 ---
 # Examples
@@ -154,13 +154,13 @@ Adds sound sources either at a specific point in space (via `coordinates`) or ov
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
-| `simulation` | `Simulation` | The simulation instance |
+| `simulation` | `Simulation` | The simulation instance. |
 | **Keyword arguments** | | |
-| `coordinates` | `Vector{Real}`, `Vector{Vector{Real}}` | `[x, y, z]` location of a point source in m |
-| `physical_group` | `Integer`, `Vector{Integer}` | Physical group ID of a surface or volume region |
-| `volume_velocity` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Volume velocity in m³/s |
-| `particle_velocity` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Normal particle velocity in m/s |
-| `pressure` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Acoustic pressure in Pa |
+| `coordinates` | `Vector{Real}`, `Vector{Vector{Real}}` | `[x, y, z]` location of a point source in m. |
+| `physical_group` | `Integer`, `Vector{Integer}` | Physical group ID of a surface or volume region. |
+| `volume_velocity` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Volume velocity in m³/s. |
+| `particle_velocity` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Normal particle velocity in m/s. |
+| `pressure` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Acoustic pressure in Pa. |
 
 ---
 # Examples

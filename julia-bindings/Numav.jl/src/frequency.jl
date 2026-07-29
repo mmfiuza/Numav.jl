@@ -21,13 +21,13 @@ Sets the frequecies to perform the simulations with two mutually exclusive ways 
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
-| `simulation` | `Simulation` | the simulation instance |
+| `simulation` | `Simulation` | The simulation instance. |
 | **Keyword arguments** | | |
 | `max` | `Real` | Upper frequency limit (Hz). Required unless `steps` is provided. Mutually exclusive with `steps`. |
 | `min` | `Real` | Lower bound of the frequency range (Hz). Only usable together with `max`. Defaults to `0` if omitted. |
 | `length` | `Integer` | Number of frequency steps to compute within the `min`/`max` range. Only usable together with `max`. Defaults to `4096` if omitted. |
 | `sampling_density` | `Numav.Option` | Sampling strategy to use within the range. Only usable together with `max`. Defaults to `Quadratic` if omitted. |
-| `step` | `Real` | Difference in Hertz between each frequency step, supposing equally spaced steps. Only usable together with `max`. Cannot be used together with `length` and `sampling_density` |
+| `step` | `Real` | Difference in Hertz between each frequency step, supposing equally spaced steps. Only usable together with `max`. Cannot be used together with `length` and `sampling_density`. |
 | `vector` | `Vector{Real}` | List of frequencies in Hertz to solve at. Cannot be used together with `max`, `min`, `length`, `sampling_density` and `step`. |
 
 ---
@@ -135,7 +135,7 @@ Returns a copy of the frequency vector set by [`set_frequency!`](@ref).
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
-| `simulation` | `Simulation` | the simulation instance |
+| `simulation` | `Simulation` | The simulation instance. |
 
 ---
 # Examples

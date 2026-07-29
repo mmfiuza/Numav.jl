@@ -64,6 +64,7 @@ add_surface_material!
 add_sound_source!
 set_result_export_path!
 run!
+plot_pressure_field
 ```
 
 ```@meta
