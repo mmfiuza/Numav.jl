@@ -19,8 +19,8 @@ Loads the mesh file. It defines the geometry of the domain and must contain the 
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
-| `simulation` | `Simulation` | the simulation instance |
-| `path_to_mesh` | `String` | Path to the mesh file (`.bdf`) |
+| `simulation` | `Simulation` | The simulation instance. |
+| `path_to_mesh` | `String` | Path to the mesh file (`.bdf`). |
 
 ---
 # Examples

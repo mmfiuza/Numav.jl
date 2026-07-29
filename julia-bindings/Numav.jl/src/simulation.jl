@@ -26,10 +26,10 @@ Creates and returns an instance of the `Simulation` type.
 
 | Keyword arguments | Type | Supported options | Description |
 |:--|:--|:--|:--|
-| `numerical_method` | `Numav.Option` | `Fem` | Numerical method used |
-| `equation` | `Numav.Option`  | `Helmholtz` | Differential equation to be solved |
-| `element_shape` | `Numav.Option`  | `Tetrahedron` | Geometrical shape of elements |
-| `element_order` | `Numav.Option`  | `Linear`, `Quadratic` | Polynomial order of the finite elements |
+| `numerical_method` | `Numav.Option` | `Fem` | Numerical method used. |
+| `equation` | `Numav.Option`  | `Helmholtz` | Differential equation to be solved. |
+| `element_shape` | `Numav.Option`  | `Tetrahedron` | Geometrical shape of elements. |
+| `element_order` | `Numav.Option`  | `Linear`, `Quadratic` | Polynomial order of the finite elements. |
 
 ---
 # Examples
@@ -94,8 +94,8 @@ Specifies the file path where simulation results will be written when calling [`
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
-| `simulation` | `Simulation` | the simulation instance |
-| `file_path` | `String` | Output file path (`.h5`) |
+| `simulation` | `Simulation` | The simulation instance. |
+| `file_path` | `String` | Result file path (`.h5`). |
 
 ---
 # Examples
@@ -120,7 +120,7 @@ Assembles and solves the system of equations for all frequencies in the defined 
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
-| `simulation` | `Simulation` | the simulation instance |
+| `simulation` | `Simulation` | The simulation instance. |
 
 ---
 # Examples
@@ -132,7 +132,7 @@ Assembles and solves the system of equations for all frequencies in the defined 
 ---
 # Output format
 
-Results are exported as files in the [HDF5 format](https://www.hdfgroup.org/solutions/hdf5/). It contains all the results and passed inputs to setup the simulation. To read the results, it is recommended to use [HDF5.jl](https://juliaio.github.io/HDF5.jl/stable/) or [HDFView](https://www.hdfgroup.org/download-hdfview/).
+Results are exported as files in the [HDF5 format](https://www.hdfgroup.org/solutions/hdf5/) (`.h5`). It contains all the results and passed inputs to setup the simulation. To read the results, it is recommended to use [HDF5.jl](https://juliaio.github.io/HDF5.jl/stable/) or [HDFView](https://www.hdfgroup.org/download-hdfview/).
 
 With [HDF5.jl](https://juliaio.github.io/HDF5.jl/stable/), you can post-process results in Julia like:
 ```julia

@@ -77,3 +77,8 @@ rm -rf build && rm -rf install && rm -rf products && julia +1.12.4 \
 dev /usr/local/share/julia/dev/numav_julia_jll
 dev /workspace/julia-bindings/Numav.jl
 ```
+
+# How to build docs
+```
+julia --project=julia-bindings/Numav.jl/docs julia-bindings/Numav.jl/docs/make.jl
+```
