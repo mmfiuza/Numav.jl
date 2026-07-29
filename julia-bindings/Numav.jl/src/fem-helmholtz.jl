@@ -6,11 +6,10 @@ export
     add_sound_source!,
     plot_pressure_field
 
-using HDF5
-using Plots
-using Statistics: mean
-using GLMakie
-using LinearAlgebra 
+import HDF5
+import Statistics
+import GLMakie
+import LinearAlgebra 
 
 @kwdef mutable struct SimulationFemHelmholtz{
     S<:ElementShape,
@@ -359,9 +358,10 @@ Plots a 3D graph of the pressure field for all space and frequncies.
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
-| `file_path` | `String` | Result file path (`.h5`) |
+| `file_path` | `String` | Result file path (`.h5`). |
 | **Keyword arguments** | | |
-| `db` | `Bool` | Controls if the plot uses the decibel scale. Defaults to `false` |
+| `db` | `Bool` | Controls if the plot uses the decibel scale. Defaults to `false`. |
+| `colormap` | `Symbol` | Colors used for the scale. Available options [here](https://docs.makie.org/dev/explanations/colors). Defaults to `:rainbow1`. |
 
 ---
 # Examples
@@ -369,9 +369,15 @@ Plots a 3D graph of the pressure field for all space and frequncies.
 > ```julia
 > plot_pressure_field("result.h5")
 > ```
+
+!!! warning
+    This function is not accurate for second order elements. The graph shown does not account for the non-vertex nodes.
 """
-function plot_pressure_field(file_path::AbstractString; db::Bool = false)
-    #TODO: FIX DOCSTRING
+function plot_pressure_field(
+    file_path::AbstractString;
+    db::Bool = false,
+    colormap::Symbol = :rainbow1,
+)
     file = HDF5.h5open(file_path, "r")
 
     get_sim_type(att::String) = attrs(file["/simulation_type"])[att]
@@ -461,6 +467,7 @@ function plot_pressure_field(file_path::AbstractString; db::Bool = false)
     positions::Vector{Float32} = [
         (x_min + x_max)/2, (y_min + y_max)/2, (z_min + z_max)/2
     ]
+    color_range = (max(p_mean - 2.5*p_std, 0), p_mean + 2.5*p_std)
     visible_flags = [true, true, true]
     mesh_objs::Vector{Any} = [nothing, nothing, nothing]
 
@@ -585,19 +592,35 @@ function plot_pressure_field(file_path::AbstractString; db::Bool = false)
         transparency = true,
     )
 
-    color_range = ( max(p_mean - 2.5*p_std, 0), p_mean + 2.5*p_std)
-
     color_bar_label = if db
         "Sound pressure level (dB, ref. 20 \u03bcPa)"
     else
         "Sound pressure amplitude (Pa)"
     end
-    GLMakie.Colorbar(
+
+    # color bar
+    colorbar = GLMakie.Colorbar(
         fig[1,2];
-        colormap = :rainbow1,
+        colormap = colormap,
         colorrange = color_range,
         label = color_bar_label,
+        ticks = GLMakie.LinearTicks(10),
     )
+    range_slider = GLMakie.IntervalSlider(
+        fig[1,3],
+        range = LinRange(max(p_min, 0), (p_mean + 5*p_std), 256),
+        startvalues = color_range,
+        horizontal = false,
+    )
+    on(range_slider.interval) do interval
+        color_range = interval
+        colorbar.colorrange = color_range
+        for dim in (1,2,3)
+            if mesh_objs[dim] !== nothing
+                mesh_objs[dim].colorrange = color_range
+            end
+        end
+    end
 
     function update_plane(dim::Int)
         if mesh_objs[dim] !== nothing
@@ -616,7 +639,7 @@ function plot_pressure_field(file_path::AbstractString; db::Bool = false)
                 color = colors[dim],
                 colorrange = color_range,
                 shading = false,
-                colormap = :rainbow1,
+                colormap = colormap,
                 transparency = false,
             )
         end
