@@ -39,38 +39,6 @@ function _check_if_simulation_has_fem_helmholtz(s::Simulation)
     return
 end
 
-"""
-Assigns acoustic material properties to a volumetric region of the mesh, identified by its physical group tag.
-
-| Positional arguments | Type | Description |
-|:--|:--|:--|
-| `simulation` | `Simulation` | The simulation instance. |
-| **Keyword arguments** | | |
-| `physical_group` | `Integer`, `Vector{Integer}` | Physical group ID (or vector of IDs) from the mesh. |
-| `density` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Density in kg/m³. |
-| `speed_of_sound` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Speed of sound in m/s. |
-
----
-# Examples
-
-> ```julia
-> rho(f) = 1.20 # air density in kg/m³
-> c(f) = 343 # speed of sound in m/s
-> add_volume_material!(s, physical_group=1, density=rho, speed_of_sound=c)
-> ```
-
-> Physical quantities can by complex to model sound absorption:
-> ```julia
-> rho(f) = 1.20 + 0.001*f
-> c(f) = 340 + 0.1*sqrt(f)
-> add_volume_material!(s, physical_group=1, density=rho, speed_of_sound=c)
-> ```
-
-> Multiple physical groups can be assigned at once:
-> ```julia
-> add_volume_material!(s, physical_group=[4,6], density=1.2, speed_of_sound=343)
-> ```
-"""
 function add_volume_material!( 
     simulation::SimulationFemHelmholtz;
     physical_group::Union{Integer, AbstractVector{<:Integer}},
@@ -99,31 +67,6 @@ function add_volume_material!(
     )
 end
 
-"""
-Assigns a specific acoustic impedance boundary condition to a surface in the mesh. This is used to model absorbers, reflecting surfaces or other boundary treatments.
-
-The specific acoustic impedance is the ratio of complex amplitude of acoustic pressure to complex amplitude of normal particle velocity (in Pa·s/m).
-
-| Positional arguments | Type | Description |
-|:--|:--|:--|
-| `simulation` | `Simulation` | The simulation instance. |
-| **Keyword arguments** | | |
-| `physical_group` | `Integer`, `Vector{Integer}` | Physical group ID of the boundary surface. |
-| `specific_acoustic_impedance` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | specific surface acoustic impedance (Pa·s/m). |
-
----
-# Examples
-
-> ```julia
-> Z(f) = 1f + 2im
-> add_surface_material!(s, physical_group=4, specific_acoustic_impedance=Z)
-> ```
-
-> Multiple physical groups can be assigned at once:
-> ```julia
-> add_surface_material!(s, physical_group=[3,1], specific_acoustic_impedance=1.0)
-> ```
-"""
 function add_surface_material!( 
     simulation::SimulationFemHelmholtz;
     physical_group::Union{Integer, AbstractVector{<:Integer}},
@@ -149,59 +92,6 @@ function add_surface_material!(
     )
 end
 
-"""
-Adds sound sources either at a specific point in space (via `coordinates`) or over a surface region (via `physical_group`). Three excitation types are supported: `volume_velocity`, `particle velocity`, and `pressure`.
-
-| Positional arguments | Type | Description |
-|:--|:--|:--|
-| `simulation` | `Simulation` | The simulation instance. |
-| **Keyword arguments** | | |
-| `coordinates` | `Vector{Real}`, `Vector{Vector{Real}}` | `[x, y, z]` location of a point source in m. |
-| `physical_group` | `Integer`, `Vector{Integer}` | Physical group ID of a surface or volume region. |
-| `volume_velocity` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Volume velocity in m³/s. |
-| `particle_velocity` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Normal particle velocity in m/s. |
-| `pressure` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | Acoustic pressure in Pa. |
-
----
-# Examples
-
-> Volume velocity source (monopole):
-> ```julia
-> Q(f) = 10/f # Volume velocity in m³/s as a function of frequency
-> add_sound_source!(s, coordinates=[1.0, 1.5, 2.0], volume_velocity=Q)
-> ```
-> Suitable for modeling punctual omnidirectional sources.
-
-> Particle velocity source (vibrating surface):
-> ```julia
-> U(f) = 15/f # Particle velocity in m/s
-> add_sound_source!(s, physical_group=2, particle_velocity=U)
-> ```
-> Prescribes the normal component of particle velocity on all surfaces of a physical group. Useful for modeling vibrating panels or pistons.
-
-> Pressure source:
-> ```julia
-> P(f) = 2f # Pressure in Pa as a function of frequency
-> 
-> # At a point in space
-> add_sound_source!(s, coordinates=[2.0, 2.5, 1.0], pressure=P)
-> 
-> # On a mesh surface
-> add_sound_source!(s, physical_group=3, pressure=P)
-> ```
-> Prescribes acoustic pressure, either at a point or on a surface.
-
-> Multiple points or physical groups can be assigned at once:
-> ```julia
-> p1 = [1.0, 3.0, 2.0]
-> p2 = [3.0, 1.0, 1.0]
-> add_sound_source!(s, coordinates=[p1,p2], volume_velocity=0.01)
-> add_sound_source!(s, physical_group=[3,5,9,2], particle_velocity=0.01)
-> ```
-
-!!! note
-    Each call to `add_sound_source!` should specify either `coordinates` or `physical_group` (not both), and exactly **one** excitation type keyword.
-"""
 function add_sound_source!( 
     simulation::SimulationFemHelmholtz;
     coordinates::Union{
@@ -353,26 +243,6 @@ function _order_points(
     @assert false
 end
 
-"""
-Plots a 3D graph of the pressure field for all space and frequncies.
-
-| Positional arguments | Type | Description |
-|:--|:--|:--|
-| `file_path` | `String` | Result file path (`.h5`). |
-| **Keyword arguments** | | |
-| `db` | `Bool` | Controls if the plot uses the decibel scale. Defaults to `false`. |
-| `colormap` | `Symbol` | Colors used for the scale. Available options [here](https://docs.makie.org/dev/explanations/colors). Defaults to `:rainbow1`. |
-
----
-# Examples
-
-> ```julia
-> plot_pressure_field("result.h5")
-> ```
-
-!!! warning
-    This function is not accurate for second order elements. The graph shown does not account for the non-vertex nodes.
-"""
 function plot_pressure_field(
     file_path::AbstractString;
     db::Bool = false,

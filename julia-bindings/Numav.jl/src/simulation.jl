@@ -21,28 +21,6 @@ abstract type ElementOrder end
 struct LinearElementOrder <: ElementOrder end
 struct QuadraticElementOrder <: ElementOrder end
 
-"""
-Creates and returns an instance of the `Simulation` type.
-
-| Keyword arguments | Type | Supported options | Description |
-|:--|:--|:--|:--|
-| `numerical_method` | `Numav.Option` | `Fem` | Numerical method used. |
-| `equation` | `Numav.Option`  | `Helmholtz` | Differential equation to be solved. |
-| `element_shape` | `Numav.Option`  | `Tetrahedron` | Geometrical shape of elements. |
-| `element_order` | `Numav.Option`  | `Linear`, `Quadratic` | Polynomial order of the finite elements. |
-
----
-# Examples
-
-> ```julia
-> s = create_simulation(
->     numerical_method = Fem,
->     equation = Helmholtz,
->     element_shape = Tetrahedron,
->     element_order = Linear
-> )
-> ```
-"""
 function create_simulation(;
     numerical_method::Option,
     equation::Option,
@@ -89,22 +67,6 @@ function create_simulation(;
     throw(ArgumentError("Invalid options"))
 end
 
-"""
-Specifies the file path where simulation results will be written when calling [`run!`](@ref).
-
-| Positional arguments | Type | Description |
-|:--|:--|:--|
-| `simulation` | `Simulation` | The simulation instance. |
-| `file_path` | `String` | Result file path (`.h5`). |
-
----
-# Examples
-
-> ```julia
-> set_result_export_path!(s, "result.h5")
-> ```
-
-"""
 function set_result_export_path!(
     simulation::Simulation,
     path_to_hdf5_file::AbstractString
@@ -115,34 +77,6 @@ function set_result_export_path!(
     )
 end
 
-"""
-Assembles and solves the system of equations for all frequencies in the defined range while writing the results to the specified export path during the solution.
-
-| Positional arguments | Type | Description |
-|:--|:--|:--|
-| `simulation` | `Simulation` | The simulation instance. |
-
----
-# Examples
-
-> ```julia
-> run!(s)
-> ```
-
----
-# Output format
-
-Results are exported as files in the [HDF5 format](https://www.hdfgroup.org/solutions/hdf5/) (`.h5`). It contains all the results and passed inputs to setup the simulation. To read the results, it is recommended to use [HDF5.jl](https://juliaio.github.io/HDF5.jl/stable/) or [HDFView](https://www.hdfgroup.org/download-hdfview/).
-
-!!! tip
-
-    With [HDF5.jl](https://juliaio.github.io/HDF5.jl/stable/), you can post-process results in Julia like:
-    ```julia
-    using HDF5
-    r = h5open("result.h5", "r")
-    # inspect contents
-    ```
-"""
 function run!(
     simulation::Simulation
 )
