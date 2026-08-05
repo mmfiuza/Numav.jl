@@ -16,7 +16,7 @@ end
 
 # global storage for user-defined functions
 const _user_functions::Vector{Ref{Function}} = [ ]
-global _next_index::UInt = 1
+global _next_index::Int = 1
 _lock = ReentrantLock()
 
 function _cmplx_split_and_store(f::Function)

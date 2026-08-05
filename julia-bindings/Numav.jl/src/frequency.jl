@@ -4,18 +4,10 @@ export
     set_frequency!,
     get_frequency_vector
 
-function _check_if_simulation_has_frequency(s::Simulation)
-    if (
-        !hasproperty(s, :equation) ||
-        !(s.equation isa HelmholtzEquation)
-    )
-        _throw_simulation_not_applicable()
-    end
-    return
-end
+const SimulationWithFreqDomain = Union{SimulationFemHelmholtz}
 
 function set_frequency!( 
-    simulation::Simulation;
+    simulation::SimulationWithFreqDomain;
     max::Union{Real, Nothing} = nothing,
     min::Union{Real, Nothing} = nothing,
     length::Union{Integer, Nothing} = nothing,
@@ -23,7 +15,6 @@ function set_frequency!(
     step::Union{Real, Nothing} = nothing,
     vector::Union{AbstractVector{<:Real}, Nothing} = nothing
 )
-    _check_if_simulation_has_frequency(simulation)
     if isnothing(max) && isnothing(vector)
         throw(ArgumentError("Neither `max` nor `vector` passed"))
     end
@@ -74,8 +65,7 @@ function set_frequency!(
 end
 
 function get_frequency_vector(
-    simulation::Simulation
+    simulation::SimulationWithFreqDomain
 )
-    _check_if_simulation_has_frequency(simulation)
     return copy(simulation._fi_to_freq)
 end

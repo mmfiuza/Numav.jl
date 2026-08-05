@@ -9,34 +9,33 @@ export
 import HDF5
 import Statistics
 import GLMakie
-import LinearAlgebra 
+import LinearAlgebra
 
 @kwdef mutable struct SimulationFemHelmholtz{
     S<:ElementShape,
     O<:ElementOrder,
+    ENIS_COUNT,
+    ENIV_COUNT,
 } <: Simulation
 
     numerical_method::FemNumericalMethod = FemNumericalMethod()
     equation::HelmholtzEquation = HelmholtzEquation()
     element_shape::S = S()
     element_order::O = O()
+    
+    _fi_to_freq::Vector{Float64} = []
+    
+    _ni_count::Int = 0
+    _sei_count::Int = 0
+    _vei_count::Int = 0
+
+    _ni_to_coords::Vector{NTuple{3,Float64}} = []
+    _sei_to_ni::Vector{NTuple{ENIS_COUNT,Int}} = []
+    _vei_to_ni::Vector{NTuple{ENIV_COUNT,Int}} = []
+    _sei_to_espg::Vector{Int} = []
+    _vei_to_evpg::Vector{Int} = []
 
     _cpp_simulation::_cpp_Simulation
-    _fi_to_freq::Vector{Float64} = []
-end
-
-function _check_if_simulation_has_fem_helmholtz(s::Simulation)
-    if (
-        !hasproperty(s, :numerical_method) ||
-        !hasproperty(s, :equation) ||
-        !(
-            (s.numerical_method isa FemNumericalMethod) &&
-            (s.equation isa HelmholtzEquation)
-        )
-    )
-        _throw_simulation_not_applicable()
-    end
-    return
 end
 
 function add_volume_material!( 
@@ -45,7 +44,6 @@ function add_volume_material!(
     density::Fdpq,
     speed_of_sound::Fdpq
 )
-    _check_if_simulation_has_fem_helmholtz(simulation)
     if physical_group isa AbstractVector
         for pg in physical_group
             add_volume_material!(
@@ -72,7 +70,6 @@ function add_surface_material!(
     physical_group::Union{Integer, AbstractVector{<:Integer}},
     specific_acoustic_impedance::Fdpq
 )
-    _check_if_simulation_has_fem_helmholtz(simulation)
     if physical_group isa AbstractVector
         for pg in physical_group
             add_surface_material!(
@@ -108,7 +105,6 @@ function add_sound_source!(
     particle_velocity::Union{Fdpq, Nothing} = nothing,
     pressure::Union{Fdpq, Nothing} = nothing
 )
-    _check_if_simulation_has_fem_helmholtz(simulation)
     if isnothing(coordinates) && isnothing(physical_group)
         throw(ArgumentError(
             "`coordinates` and `physical_group` not defined"
@@ -193,11 +189,6 @@ function add_sound_source!(
         _cmplx_split_and_store(fdpqv[])...
     )
 end
-
-import HDF5
-import GLMakie
-import LinearAlgebra
-import Statistics
 
 function _order_points(
     cni::Vector{Int},

@@ -11,8 +11,8 @@ module Numav
     include("options.jl") # define every Option singleton
 
     include("simulation.jl") # general definition of the Simulation type
-    include("mesh.jl")
-    include("frequency.jl")
     include("fem-helmholtz.jl")
+    include("frequency.jl")
+    include("mesh.jl")
     
 end

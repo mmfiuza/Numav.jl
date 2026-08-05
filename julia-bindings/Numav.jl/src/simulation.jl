@@ -21,6 +21,22 @@ abstract type ElementOrder end
 struct LinearElementOrder <: ElementOrder end
 struct QuadraticElementOrder <: ElementOrder end
 
+function _enis_count(element_order::ElementOrder)
+    if element_order isa LinearElementOrder
+        return 3
+    elseif element_order isa QuadraticElementOrder
+        return 4
+    end
+end
+
+function _eniv_count(element_order::ElementOrder)
+    if element_order isa LinearElementOrder
+        return 4
+    elseif element_order isa QuadraticElementOrder
+        return 10
+    end
+end
+
 function create_simulation(;
     numerical_method::Option,
     equation::Option,
@@ -28,19 +44,7 @@ function create_simulation(;
     element_order::Option
 )
     if numerical_method === Fem && equation === Helmholtz
-        cpp_args = ()
-
-        if numerical_method === Fem
-            cpp_args = (cpp_args..., _cpp_NumericalMethod_fem)
-        else
-            throw(ArgumentError("Invalid `numerical_method` option"))
-        end
-
-        if equation === Helmholtz 
-            cpp_args = (cpp_args..., _cpp_Equation_helmholtz)
-        else
-            throw(ArgumentError("Invalid `equation` option"))
-        end
+        cpp_args = (_cpp_NumericalMethod_fem, _cpp_Equation_helmholtz)
 
         if element_shape === Tetrahedron
             element_shape_type = TetrahedronElementShape
@@ -62,6 +66,8 @@ function create_simulation(;
         return SimulationFemHelmholtz{
                 element_shape_type,
                 element_order_type,
+                _enis_count(element_order_type()),
+                _eniv_count(element_order_type()),
             }( _cpp_simulation = _cpp_Simulation{cpp_args...}() )
     end
     throw(ArgumentError("Invalid options"))
