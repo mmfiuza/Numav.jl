@@ -14,9 +14,9 @@ module Numav
     include("simulation.jl") # definition of the Simulation type and subtypes
 
     # include functions
-    include("functions/fem-helmholtz.jl")
-    include("functions/frequency.jl")
+    include("functions/any-simulation.jl")
     include("functions/mesh.jl")
-    include("functions/general.jl")
+    include("functions/frequency.jl")
+    include("functions/fem-helmholtz.jl")
     
 end
