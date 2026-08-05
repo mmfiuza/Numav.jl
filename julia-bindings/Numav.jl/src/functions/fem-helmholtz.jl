@@ -1,5 +1,7 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
+# This file has functions specifically for SimulationFemHelmholtz
+
 export
     add_volume_material!,
     add_surface_material!,
@@ -10,33 +12,6 @@ import HDF5
 import Statistics
 import GLMakie
 import LinearAlgebra
-
-@kwdef mutable struct SimulationFemHelmholtz{
-    S<:ElementShape,
-    O<:ElementOrder,
-    ENIS_COUNT,
-    ENIV_COUNT,
-} <: Simulation
-
-    numerical_method::FemNumericalMethod = FemNumericalMethod()
-    equation::HelmholtzEquation = HelmholtzEquation()
-    element_shape::S = S()
-    element_order::O = O()
-    
-    _fi_to_freq::Vector{Float64} = []
-    
-    _ni_count::Int = 0
-    _sei_count::Int = 0
-    _vei_count::Int = 0
-
-    _ni_to_coords::Vector{NTuple{3,Float64}} = []
-    _sei_to_ni::Vector{NTuple{ENIS_COUNT,Int}} = []
-    _vei_to_ni::Vector{NTuple{ENIV_COUNT,Int}} = []
-    _sei_to_espg::Vector{Int} = []
-    _vei_to_evpg::Vector{Int} = []
-
-    _cpp_simulation::_cpp_Simulation
-end
 
 function add_volume_material!( 
     simulation::SimulationFemHelmholtz;

@@ -1,5 +1,7 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
+# This file is for binding all the C++ components of Numav.
+
 # include dependencies
 using numav_julia_jll
 using CxxWrap

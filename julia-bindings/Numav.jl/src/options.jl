@@ -1,5 +1,8 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
+# This file defines all the Option singletons, used to specify modes of
+# operation in functions of Numav.
+
 export
     Fem,
     Helmholtz,

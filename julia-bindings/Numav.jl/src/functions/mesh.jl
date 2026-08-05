@@ -1,6 +1,6 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
-# export functions
+# This file has functions applicable to Simulation subtypes that have a mesh.
 
 export load_mesh!
 

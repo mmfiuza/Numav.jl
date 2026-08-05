@@ -1,5 +1,7 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
+# This file has the Numav module, that includes all the source code.
+
 module Numav
 
     # automatically create docstrings from files in src/docs
@@ -9,10 +11,12 @@ module Numav
     include("cpp.jl") # wrapped C++ part
     include("utils.jl") # various things
     include("options.jl") # define every Option singleton
+    include("simulation.jl") # definition of the Simulation type and subtypes
 
-    include("simulation.jl") # general definition of the Simulation type
-    include("fem-helmholtz.jl")
-    include("frequency.jl")
-    include("mesh.jl")
+    # include functions
+    include("functions/fem-helmholtz.jl")
+    include("functions/frequency.jl")
+    include("functions/mesh.jl")
+    include("functions/general.jl")
     
 end

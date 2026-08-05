@@ -1,5 +1,7 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
+# This file has various useful stuff.
+
 # include dependencies
 import Interpolations
 import DelimitedFiles
