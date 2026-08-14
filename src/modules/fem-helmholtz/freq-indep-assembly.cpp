@@ -230,7 +230,7 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_vol_elements()
         for (uint64_t eni = 0UL; eni != ENIV_COUNT<O>; ++eni) {
             const uint64_t ni = _vei_to_ni[vei][eni];
             for (uint64_t di = 0UL; di != DIM; ++di) {
-                coords_matrix(di,eni) = _ni_to_coords[ni][di];
+                coords_matrix(di,eni) = _ni_to_xyz[ni][di];
             }
         }
         #if \
@@ -456,7 +456,7 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_impedance()
             std::array<std::array<Float,DIM>, ENIS_COUNT<O>> triangle_3d;
             for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni) {
                 const uint64_t ni = _sei_to_ni[sei][eni];
-                triangle_3d[eni] = _ni_to_coords[ni];
+                triangle_3d[eni] = _ni_to_xyz[ni];
             }
             std::array<std::array<Float,2UL>,ENIS_COUNT<O>> triangle_2d =
                 project_triangle_to_2d<O>(triangle_3d);
@@ -503,7 +503,7 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_impedance()
             std::array<std::array<Float,DIM>,3UL> vertex_coords;
             for (uint64_t eni = 0UL; eni != 3UL; ++eni) {
                 const uint64_t ni = _sei_to_ni[sei][eni];
-                vertex_coords[eni] = _ni_to_coords[ni];
+                vertex_coords[eni] = _ni_to_xyz[ni];
             }
             const Float triangle_area = get_triangle_area(vertex_coords);
 
@@ -579,7 +579,7 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_velocity()
             std::array<std::array<Float,DIM>, ENIS_COUNT<O>> triangle_3d;
             for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni) {
                 const uint64_t ni = _sei_to_ni[sei][eni];
-                triangle_3d[eni] = _ni_to_coords[ni];
+                triangle_3d[eni] = _ni_to_xyz[ni];
             }
             std::array<std::array<Float,2UL>,ENIS_COUNT<O>> triangle_2d =
                 project_triangle_to_2d<O>(triangle_3d);
@@ -623,7 +623,7 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_velocity()
             std::array<std::array<Float,DIM>,3UL> vertex_coords;
             for (uint64_t eni = 0UL; eni != 3UL; ++eni) {
                 const uint64_t ni = _sei_to_ni[sei][eni];
-                vertex_coords[eni] = _ni_to_coords[ni];
+                vertex_coords[eni] = _ni_to_xyz[ni];
             }
             const Float triangle_area = get_triangle_area(vertex_coords);
 

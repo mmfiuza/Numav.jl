@@ -21,9 +21,9 @@ uint64_t SimulationFemHelmTet<O>::_get_closest_point(
     uint64_t ni_closest = std::numeric_limits<uint64_t>::max();
     for (uint64_t ni = 0UL; ni != _ni_count; ++ni) {
         Float distance_squared = 
-            power<2UL>(_ni_to_coords[ni][0UL] - point_coords[0UL]) +
-            power<2UL>(_ni_to_coords[ni][1UL] - point_coords[1UL]) +
-            power<2UL>(_ni_to_coords[ni][2UL] - point_coords[2UL])
+            power<2UL>(_ni_to_xyz[ni][0UL] - point_coords[0UL]) +
+            power<2UL>(_ni_to_xyz[ni][1UL] - point_coords[1UL]) +
+            power<2UL>(_ni_to_xyz[ni][2UL] - point_coords[2UL])
         ;
         if (distance_squared < minimum_distance_squared) {
             minimum_distance_squared = distance_squared;
@@ -57,7 +57,7 @@ void SimulationFemHelmTet<O>::_load_bdf(const char* const path_to_mesh)
     }
 
     // second pass: parse data
-    _ni_to_coords = fz::SafePtr<std::array<Float,3UL>>(_ni_count);
+    _ni_to_xyz = fz::SafePtr<std::array<Float,3UL>>(_ni_count);
     _sei_to_ni = fz::SafePtr<std::array<uint64_t,ENIS_COUNT<O>>>(_sei_count);
     _vei_to_ni = fz::SafePtr<std::array<uint64_t,ENIV_COUNT<O>>>(_vei_count);
     _sei_to_espg = fz::SafePtr<uint64_t>(_sei_count);
@@ -72,7 +72,7 @@ void SimulationFemHelmTet<O>::_load_bdf(const char* const path_to_mesh)
         // all minus one are for zero base indexing conversion
         if (line.starts_with("GRID    ")) {
             const uint64_t ni = parse<Float>(line.substr(8UL, 8UL)) - 1UL;
-            _ni_to_coords[ni] = {
+            _ni_to_xyz[ni] = {
                 parse<Float>(line.substr(24UL, 8UL)),
                 parse<Float>(line.substr(32UL, 8UL)),
                 parse<Float>(line.substr(40UL, 8UL))
@@ -155,9 +155,9 @@ void SimulationFemHelmTet<ElementOrder::QUADRATIC>::_generate_extra_nodes()
     }
 
     // TODO: grow() here
-    auto temp = std::move(_ni_to_coords);
-    _ni_to_coords = fz::SafePtr<std::array<Float,3UL>>(_ni_count);
-    std::copy(temp.begin(), temp.end(), _ni_to_coords.begin());
+    auto temp = std::move(_ni_to_xyz);
+    _ni_to_xyz = fz::SafePtr<std::array<Float,3UL>>(_ni_count);
+    std::copy(temp.begin(), temp.end(), _ni_to_xyz.begin());
     temp.free();
     
     // second pass: create the extra nodes and assign to volume elements
@@ -171,19 +171,19 @@ void SimulationFemHelmTet<ElementOrder::QUADRATIC>::_generate_extra_nodes()
                 _vei_to_ni[vei][VTX_PAIRS_VOL[i][1UL]]
             );
             const Float x = mean(
-                _ni_to_coords[std::get<0UL>(tup)][0UL],
-                _ni_to_coords[std::get<1UL>(tup)][0UL]
+                _ni_to_xyz[std::get<0UL>(tup)][0UL],
+                _ni_to_xyz[std::get<1UL>(tup)][0UL]
             );
             const Float y = mean(
-                _ni_to_coords[std::get<0UL>(tup)][1UL],
-                _ni_to_coords[std::get<1UL>(tup)][1UL]
+                _ni_to_xyz[std::get<0UL>(tup)][1UL],
+                _ni_to_xyz[std::get<1UL>(tup)][1UL]
             );
             const Float z = mean(
-                _ni_to_coords[std::get<0UL>(tup)][2UL],
-                _ni_to_coords[std::get<1UL>(tup)][2UL]
+                _ni_to_xyz[std::get<0UL>(tup)][2UL],
+                _ni_to_xyz[std::get<1UL>(tup)][2UL]
             );
             const uint64_t idx_extra_node = idxs_extra_nodes.at(tup);
-            _ni_to_coords[idx_extra_node] = {x, y, z}; // add extra node
+            _ni_to_xyz[idx_extra_node] = {x, y, z}; // add extra node
         }
     }
     is_extra_node.free();

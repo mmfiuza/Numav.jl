@@ -161,7 +161,7 @@ private:
     std::vector<FuncFloatToCmplx> _ppi_to_pressure;
 
     // members allocated during mesh load
-    fz::SafePtr<std::array<Float, DIM>> _ni_to_coords;
+    fz::SafePtr<std::array<Float, DIM>> _ni_to_xyz;
     fz::SafePtr<std::array<uint64_t, ENIS_COUNT<O>>> _sei_to_ni;
     fz::SafePtr<std::array<uint64_t, ENIV_COUNT<O>>> _vei_to_ni;
     fz::SafePtr<uint64_t> _sei_to_espg;

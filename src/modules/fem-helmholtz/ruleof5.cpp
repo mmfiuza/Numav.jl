@@ -31,7 +31,7 @@ SimulationFemHelmTet<O>::Simulation() {
 template<ElementOrder O>
 SimulationFemHelmTet<O>::~Simulation() {
     if (!_did_run && _is_mesh_defined) {
-        _ni_to_coords.free();
+        _ni_to_xyz.free();
         _sei_to_ni.free();
         _vei_to_ni.free();
         _sei_to_espg.free();

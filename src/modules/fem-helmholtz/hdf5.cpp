@@ -97,7 +97,7 @@ void SimulationFemHelmTet<O>::_write_simulation_inputs_to_hdf5_file(
             mesh_grp,
             "nodes",
             static_cast_contiguous_data<double>(
-                _ni_to_coords.data()->data(),
+                _ni_to_xyz.data()->data(),
                 _ni_count * 3UL
             ).get(),
             _ni_count,

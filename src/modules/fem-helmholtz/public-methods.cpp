@@ -98,7 +98,7 @@ void SimulationFemHelmTet<O>::set_loaded_mesh(
     _sei_count = sei_count;
     _vei_count = vei_count;
     
-    _ni_to_coords = fz::SafePtr<std::array<Float,3UL>>(_ni_count);
+    _ni_to_xyz = fz::SafePtr<std::array<Float,3UL>>(_ni_count);
     _sei_to_ni = fz::SafePtr<std::array<uint64_t,ENIS_COUNT<O>>>(_sei_count);
     _vei_to_ni = fz::SafePtr<std::array<uint64_t,ENIV_COUNT<O>>>(_vei_count);
     _sei_to_espg = fz::SafePtr<uint64_t>(_sei_count);
@@ -107,7 +107,7 @@ void SimulationFemHelmTet<O>::set_loaded_mesh(
     std::copy(
         ni_to_xyz,
         ni_to_xyz + 3UL*_ni_count,
-        _ni_to_coords.data()->data()
+        _ni_to_xyz.data()->data()
     );
     std::copy(
         sei_to_ni,
