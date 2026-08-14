@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "1731d335b8d0b3130d63e8cbac7b218cd40546c4"
+project_hash = "0335071b4370224d89c2a32db83b46da2df32fc8"
 
 [[deps.ANSIColoredPrinters]]
 git-tree-sha1 = "574baf8110975760d391c710b6341da1afa48d8c"
@@ -1071,7 +1071,7 @@ uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 version = "1.3.0"
 
 [[deps.Numav]]
-deps = ["CxxWrap", "DelimitedFiles", "ExternalDocstrings", "GLMakie", "HDF5", "Interpolations", "LinearAlgebra", "Statistics", "Test", "numav_julia_jll"]
+deps = ["CxxWrap", "DelimitedFiles", "ExternalDocstrings", "GLMakie", "HDF5", "Interpolations", "LinearAlgebra", "StaticArrays", "Statistics", "Test", "numav_julia_jll"]
 path = "."
 uuid = "8e910097-05db-4d5e-bf44-3d692aba33cf"
 version = "0.2.4"

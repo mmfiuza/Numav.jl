@@ -59,6 +59,16 @@ public:
     void load_mesh(
         const char* const
     );
+    void set_loaded_mesh(
+        const Float* const ni_to_xyz,
+        const uint64_t* const sei_to_ni,
+        const uint64_t* const vei_to_ni,
+        const uint64_t* const sei_to_espg,
+        const uint64_t* const vei_to_evpg,
+        const uint64_t ni_count,
+        const uint64_t sei_count,
+        const uint64_t vei_count
+    );
     void add_volume_material(
         const uint64_t, const FuncFloatToCmplx&, const FuncFloatToCmplx&
     );

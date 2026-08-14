@@ -147,7 +147,7 @@ void SimulationFemHelmTet<ElementOrder::QUADRATIC>::_generate_extra_nodes()
                 idxs_extra_nodes.insert({tup, _ni_count});
                 ++_ni_count;
             } else {
-                is_extra_node[vei][i] = false;          
+                is_extra_node[vei][i] = false;
                 _vei_to_ni[vei][ENIV_COUNT<ElementOrder::LINEAR> + i] =
                     idxs_extra_nodes.at(tup);
             }     

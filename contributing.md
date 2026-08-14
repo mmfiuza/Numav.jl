@@ -43,6 +43,19 @@ cmake --build build --parallel ${nproc} &&
 ./build/tests_bin/test1
 ```
 
+# How to build the JLL for local testing
+```
+rm -rf build && rm -rf install && rm -rf products && julia +1.12.4 \
+/workspace/julia-bindings/Yggdrasil/N/numav_julia/build_tarballs.jl \
+--deploy-jll=local x86_64-linux-gnu-julia_version+1.12.0
+```
+
+# Dev the Julia packages
+```
+dev /usr/local/share/julia/dev/numav_julia_jll
+dev /workspace/julia-bindings/Numav.jl
+```
+
 # How to build numav_julia for local testing
 ```
 rm -rf build &&
@@ -58,20 +71,6 @@ cmake -B build \
 /HDF_Group/HDF5/2.1.1" &&
 cmake --build build --parallel ${nproc} &&
 cmake --install ./build
-```
-
-# How to build the JLL for local testing
-```
-rm -rf build && rm -rf install && rm -rf products && julia +1.12.4 \
-/workspace/julia-bindings/Yggdrasil/N/numav_julia/build_tarballs.jl \
---deploy-jll=local x86_64-linux-gnu-julia_version+1.12.0
-
-```
-
-# Dev the Julia packages
-```
-dev /usr/local/share/julia/dev/numav_julia_jll
-dev /workspace/julia-bindings/Numav.jl
 ```
 
 # How to build docs

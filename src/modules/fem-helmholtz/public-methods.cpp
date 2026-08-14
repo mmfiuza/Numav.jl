@@ -76,6 +76,63 @@ void SimulationFemHelmTet<O>::load_mesh(
     _is_mesh_defined = true;
 }
 
+#include <iostream>
+
+template <ElementOrder O>
+void SimulationFemHelmTet<O>::set_loaded_mesh(
+    const Float* const ni_to_xyz,
+    const uint64_t* const sei_to_ni,
+    const uint64_t* const vei_to_ni,
+    const uint64_t* const sei_to_espg,
+    const uint64_t* const vei_to_evpg,
+    const uint64_t ni_count,
+    const uint64_t sei_count,
+    const uint64_t vei_count
+) {
+    _check_if_did_run();
+    if (_is_mesh_defined) {
+        error("Mesh is already defined.");
+    }
+
+    _ni_count = ni_count;
+    _sei_count = sei_count;
+    _vei_count = vei_count;
+    
+    _ni_to_coords = fz::SafePtr<std::array<Float,3UL>>(_ni_count);
+    _sei_to_ni = fz::SafePtr<std::array<uint64_t,ENIS_COUNT<O>>>(_sei_count);
+    _vei_to_ni = fz::SafePtr<std::array<uint64_t,ENIV_COUNT<O>>>(_vei_count);
+    _sei_to_espg = fz::SafePtr<uint64_t>(_sei_count);
+    _vei_to_evpg = fz::SafePtr<uint64_t>(_vei_count);
+
+    std::copy(
+        ni_to_xyz,
+        ni_to_xyz + 3UL*_ni_count,
+        _ni_to_coords.data()->data()
+    );
+    std::copy(
+        sei_to_ni,
+        sei_to_ni + ENIS_COUNT<O>*_sei_count,
+        _sei_to_ni.data()->data()
+    );
+    std::copy(
+        vei_to_ni,
+        vei_to_ni + ENIV_COUNT<O>*_vei_count,
+        _vei_to_ni.data()->data()
+    );
+    std::copy(sei_to_espg, sei_to_espg + _sei_count, _sei_to_espg.data());
+    std::copy(vei_to_evpg, vei_to_evpg + _vei_count, _vei_to_evpg.data());
+
+    for (auto& espg : _sei_to_espg) {
+        _existing_espg.insert(espg);
+    }
+    for (auto& evpg : _vei_to_evpg) {
+        _existing_evpg.insert(evpg);
+    }
+
+    _generate_extra_nodes(); // call is based on the element order
+    _is_mesh_defined = true;
+}
+
 template <ElementOrder O>
 void SimulationFemHelmTet<O>::add_volume_material(
     const uint64_t evpg,
