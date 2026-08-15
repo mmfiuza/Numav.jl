@@ -130,10 +130,28 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
                 w.set_frequency_vector(cpp_vec);
             }
         );
-        wrapped.module().method("_cpp_load_mesh!",
+        wrapped.module().method("_cpp_load_mesh",
             []( WrappedT& w,
-                const char* const path_to_mesh
-            ) { w.load_mesh(path_to_mesh); }
+                const jlcxx::ArrayRef<Float> ni_to_xyz,
+                const jlcxx::ArrayRef<uint64_t> sei_to_ni,
+                const jlcxx::ArrayRef<uint64_t> vei_to_ni,
+                const jlcxx::ArrayRef<uint64_t> sei_to_espg,
+                const jlcxx::ArrayRef<uint64_t> vei_to_evpg,
+                const uint64_t ni_count,
+                const uint64_t sei_count,
+                const uint64_t vei_count
+            ) {
+                w.load_mesh(
+                    ni_to_xyz.data(),
+                    sei_to_ni.data(),
+                    vei_to_ni.data(),
+                    sei_to_espg.data(),
+                    vei_to_evpg.data(),
+                    ni_count,
+                    sei_count,
+                    vei_count
+                );
+            }
         );
         wrapped.module().method("_cpp_add_volume_material!",
             []( WrappedT& w,
@@ -195,29 +213,6 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         );
         wrapped.module().method("_cpp_run!", 
             [](WrappedT& w) { w.run(); }
-        );
-        wrapped.module().method("_cpp_set_loaded_mesh",
-            []( WrappedT& w,
-                const jlcxx::ArrayRef<Float> ni_to_xyz,
-                const jlcxx::ArrayRef<uint64_t> sei_to_ni,
-                const jlcxx::ArrayRef<uint64_t> vei_to_ni,
-                const jlcxx::ArrayRef<uint64_t> sei_to_espg,
-                const jlcxx::ArrayRef<uint64_t> vei_to_evpg,
-                const uint64_t ni_count,
-                const uint64_t sei_count,
-                const uint64_t vei_count
-            ) {
-                w.set_loaded_mesh(
-                    ni_to_xyz.data(),
-                    sei_to_ni.data(),
-                    vei_to_ni.data(),
-                    sei_to_espg.data(),
-                    vei_to_evpg.data(),
-                    ni_count,
-                    sei_count,
-                    vei_count
-                );
-            }
         );
     });
 }

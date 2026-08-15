@@ -54,32 +54,6 @@ void SimulationFemHelmTet<O>::set_frequency_vector(
 
 template <ElementOrder O>
 void SimulationFemHelmTet<O>::load_mesh(
-    const char* const path_to_mesh
-) {
-    _check_if_did_run();
-    if (_is_mesh_defined) {
-        error("Mesh is already defined.");
-    }
-    std::string str = path_to_mesh;
-    if (str.ends_with(".bdf") || str.ends_with(".nas")) {
-        _load_bdf(path_to_mesh);
-    }
-    else {
-        const uint64_t dot_position = str.find_last_of('.');
-        const uint64_t format_len = str.size() - dot_position;
-        const std::string format = std::string(
-            str.substr(dot_position, format_len)
-        );
-        error("Unrecognized file format: \"{0}\".", format);
-    }
-    _generate_extra_nodes(); // call is based on the element order
-    _is_mesh_defined = true;
-}
-
-#include <iostream>
-
-template <ElementOrder O>
-void SimulationFemHelmTet<O>::set_loaded_mesh(
     const Float* const ni_to_xyz,
     const uint64_t* const sei_to_ni,
     const uint64_t* const vei_to_ni,

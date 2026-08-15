@@ -94,7 +94,7 @@ function load_mesh!(
             throw(ArgumentError("Unrecognized file format: `$ext`"))
         end
     end
-    _cpp_set_loaded_mesh(
+    _cpp_load_mesh(
         s._cpp_simulation,
         vec(s._ni_to_xyz),
         UInt64.(vec(s._sei_to_ni) .- 1),

@@ -91,9 +91,6 @@ public:
         const std::vector<Float>&
     );
     void load_mesh(
-        const char* const
-    );
-    void set_loaded_mesh(
         const Float* const ni_to_xyz,
         const uint64_t* const sei_to_ni,
         const uint64_t* const vei_to_ni,
