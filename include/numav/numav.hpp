@@ -20,7 +20,6 @@ namespace numav {
     }
     using Cmplx = typename std::complex<Float>;
     using FuncFloatToCmplx = typename std::function<Cmplx(const Float)>;
-    using Coord = typename std::array<Float,3UL>;
 
     // constants
     constexpr Float PI = 3.14159265358979323846_F;
@@ -36,4 +35,4 @@ namespace numav {
 } // namespace numav
 
 // include modules
-#include "numav/modules/fem/fem.hpp"
+#include "numav/modules/fem-helmholtz/fem-helmholtz.hpp"
