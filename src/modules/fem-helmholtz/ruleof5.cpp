@@ -13,7 +13,6 @@ SimulationFemHelmTet<O>::Simulation() {
     _is_mesh_defined = false;
     _is_any_source_defined = false;
     _did_run = false;
-    _fi_count = DEFAULT_FREQ_STEPS_COUNT;
     _ivpg_count = 0UL;
     _ispgi_count = 0UL;
     _vpi_count = 0UL;

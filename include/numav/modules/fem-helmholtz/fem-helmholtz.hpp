@@ -72,8 +72,6 @@ enum class FrequencySamplingDensity : uint64_t {
     QUADRATIC
 };
 
-constexpr uint64_t DEFAULT_FREQ_STEPS_COUNT = 4096UL;
-
 template<ElementOrder O>
 class Simulation<
     NumericalMethod::FEM,
