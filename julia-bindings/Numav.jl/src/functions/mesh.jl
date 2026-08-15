@@ -32,9 +32,8 @@ function _load_bdf!(
         end
 
         s._ni_to_xyz = Matrix{Float64}(undef, 3, s._ni_count)
-        # TODO: change 1 to undef
-        s._sei_to_ni = ones(_enis_count(s), s._sei_count)
-        s._vei_to_ni = ones(_eniv_count(s), s._vei_count)
+        s._sei_to_ni = Matrix{Int}(undef, _enis_count(s), s._sei_count)
+        s._vei_to_ni = Matrix{Int}(undef, _eniv_count(s), s._vei_count)
         s._sei_to_espg = Vector{Int}(undef, s._sei_count)
         s._vei_to_evpg = Vector{Int}(undef, s._vei_count)
 
@@ -80,6 +79,73 @@ function _load_bdf!(
     end
 end
 
+function _generate_non_vtx_nodes!(s::SimulationFemHelmholtz)
+    # 1-based vertex-pair tables (translated from the 0-based C++ arrays)
+    VTX_PAIRS_VOL = ((1,2), (1,3), (1,4), (2,3), (2,4), (3,4))
+    VTX_PAIRS_SFC = ((1,2), (1,3), (2,3))
+
+    ENIS_COUNT_LIN = _enis_count(ElementOrder_LINEAR)
+    ENIV_COUNT_LIN = _eniv_count(ElementOrder_LINEAR)
+
+    idxs_extra_nodes = Dict{Tuple{Int,Int}, Int}()
+
+    # first pass: count extra nodes and save idx tuples
+    is_extra_node = falses(length(VTX_PAIRS_VOL), s._vei_count)
+    for vei in 1:s._vei_count
+        for i in eachindex(VTX_PAIRS_VOL)
+            a, b = VTX_PAIRS_VOL[i]
+            n1 = s._vei_to_ni[a, vei]
+            n2 = s._vei_to_ni[b, vei]
+            tup = n1 < n2 ? (n1, n2) : (n2, n1)
+
+            if !haskey(idxs_extra_nodes, tup)
+                is_extra_node[i, vei] = true
+                s._ni_count += 1
+                s._vei_to_ni[ENIV_COUNT_LIN + i, vei] = s._ni_count
+                idxs_extra_nodes[tup] = s._ni_count
+            else
+                is_extra_node[i, vei] = false
+                s._vei_to_ni[ENIV_COUNT_LIN + i, vei] = idxs_extra_nodes[tup]
+            end
+        end
+    end
+
+    # grow _ni_to_xyz to fit the newly counted nodes
+    ni_to_xyz_new = zeros(Float64, 3, s._ni_count)
+    ni_to_xyz_new[:, 1:size(s._ni_to_xyz, 2)] .= s._ni_to_xyz
+    s._ni_to_xyz = ni_to_xyz_new
+
+    # second pass: create the extra nodes and assign to volume elements
+    for vei in 1:s._vei_count
+        for i in eachindex(VTX_PAIRS_VOL)
+            is_extra_node[i, vei] || continue
+
+            a, b = VTX_PAIRS_VOL[i]
+            n1 = s._vei_to_ni[a, vei]
+            n2 = s._vei_to_ni[b, vei]
+            tup = n1 < n2 ? (n1, n2) : (n2, n1)
+
+            x = (s._ni_to_xyz[1, tup[1]] + s._ni_to_xyz[1, tup[2]]) / 2
+            y = (s._ni_to_xyz[2, tup[1]] + s._ni_to_xyz[2, tup[2]]) / 2
+            z = (s._ni_to_xyz[3, tup[1]] + s._ni_to_xyz[3, tup[2]]) / 2
+
+            idx_extra_node = idxs_extra_nodes[tup]
+            s._ni_to_xyz[:, idx_extra_node] = [x, y, z]
+        end
+    end
+
+    # third pass: assign nodes to surface elements
+    for sei in 1:s._sei_count
+        for i in eachindex(VTX_PAIRS_SFC)
+            a, b = VTX_PAIRS_SFC[i]
+            n1 = s._sei_to_ni[a, sei]
+            n2 = s._sei_to_ni[b, sei]
+            tup = n1 < n2 ? (n1, n2) : (n2, n1)
+            s._sei_to_ni[ENIS_COUNT_LIN + i, sei] = idxs_extra_nodes[tup]
+        end
+    end
+end
+
 function load_mesh!(
     s::SimulationWithMesh,
     path_to_mesh::AbstractString
@@ -93,6 +159,9 @@ function load_mesh!(
         else
             throw(ArgumentError("Unrecognized file format: `$ext`"))
         end
+    end
+    if (_is_quadratic(s))
+        _generate_non_vtx_nodes!(s)
     end
     _cpp_load_mesh(
         s._cpp_simulation,

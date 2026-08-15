@@ -53,3 +53,7 @@ end
 function _eniv_count(s::SimulationFemHelmholtz)
     return typeof(s).parameters[4]
 end
+
+function _is_quadratic(s::SimulationFemHelmholtz)
+    return typeof(s).parameters[2] === ElementOrder_QUADRATIC
+end

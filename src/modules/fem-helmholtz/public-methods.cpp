@@ -103,7 +103,6 @@ void SimulationFemHelmTet<O>::load_mesh(
         _existing_evpg.insert(evpg);
     }
 
-    _generate_extra_nodes(); // call is based on the element order
     _is_mesh_defined = true;
 }
 

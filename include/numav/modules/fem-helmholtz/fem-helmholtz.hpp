@@ -121,8 +121,6 @@ public:
     );
 
 private:
-    void _load_bdf(const char* const path);
-    void _generate_extra_nodes();
     uint64_t _get_closest_point(const std::array<Float,3UL> point_coords);
     void _check_if_mesh_is_defined();
     void _check_if_did_run();
