@@ -17,6 +17,8 @@
 #include <iostream>
 #include <algorithm>
 #include <stdexcept>
+#include <iterator>
+#include <type_traits>
 #if SAFE_PTR_DEBUG_BOOL
     #include <unordered_map>
     #include <mutex>
@@ -43,7 +45,7 @@ public:
     }
 
     // constructor
-    SafePtr(const size_t& size) {
+    SafePtr(const size_t size) {
         #if SAFE_PTR_DEBUG_BOOL
             std::lock_guard<std::mutex> lock(_mtx);
             _memory_id = _get_new_memory_id();
@@ -52,6 +54,19 @@ public:
         #endif
         _begin = new T[size];
         _end = _begin + size;
+    }
+
+    // constructor
+    SafePtr(const size_t size, const T value) {
+        #if SAFE_PTR_DEBUG_BOOL
+            std::lock_guard<std::mutex> lock(_mtx);
+            _memory_id = _get_new_memory_id();
+            _ref_count[_memory_id] = 1;
+            _is_deleted[_memory_id] = false;
+        #endif
+        _begin = new T[size];
+        _end = _begin + size;
+        fill(value);
     }
 
     // constructor
@@ -67,13 +82,30 @@ public:
         std::copy(il.begin(), il.end(), this->_begin);
     }
 
-    // destructor
-    ~SafePtr() noexcept(!SAFE_PTR_DEBUG_BOOL) {
+    // constructor
+    template<
+        typename InputIt,
+        typename std::enable_if<
+            !std::is_integral<InputIt>::value, int
+        >::type = 0
+    >
+    SafePtr(InputIt first, InputIt last) {
         #if SAFE_PTR_DEBUG_BOOL
             std::lock_guard<std::mutex> lock(_mtx);
-            --_get_ref_count_nothrow();
-            if (_get_ref_count_nothrow() == 0) {
-                if(!_get_is_deleted_nothrow()) {
+            _memory_id = _get_new_memory_id();
+            _ref_count[_memory_id] = 1;
+            _is_deleted[_memory_id] = false;
+        #endif
+        _construct_from_range(first, last, _sp_has_subtraction<InputIt>{});
+    }
+
+    // destructor
+    ~SafePtr() noexcept(!SAFE_PTR_TEST_BOOL) {
+        #if SAFE_PTR_DEBUG_BOOL
+            std::lock_guard<std::mutex> lock(_mtx);
+            --_get_ref_count();
+            if (_get_ref_count() == 0) {
+                if(!_get_is_deleted()) {
                     _warning("Memory was leaked.");
                 }
                 _ref_count.erase(_memory_id);
@@ -86,7 +118,7 @@ public:
     SafePtr(const SafePtr& other) {
         #if SAFE_PTR_DEBUG_BOOL
             std::lock_guard<std::mutex> lock(_mtx);
-            other._check_for_usage_after_free();
+            other._check_for_use_after_free();
             this->_memory_id = _get_new_memory_id();
             _ref_count[this->_memory_id] = 1;
             _is_deleted[this->_memory_id] = false;
@@ -97,13 +129,12 @@ public:
     }
     
     // move constructor
-    SafePtr(SafePtr&& other)
-    noexcept(!SAFE_PTR_DEBUG_BOOL && !SAFE_PTR_TEST_BOOL) {
+    SafePtr(SafePtr&& other) noexcept(!SAFE_PTR_TEST_BOOL) {
         #if SAFE_PTR_DEBUG_BOOL
             std::lock_guard<std::mutex> lock(_mtx);
-            other._check_for_usage_after_free();
+            other._check_for_use_after_free();
             this->_memory_id = other._memory_id;
-            ++_get_ref_count_nothrow();
+            ++_get_ref_count();
         #endif
         this->_begin = other._begin;
         this->_end = other._end;
@@ -116,9 +147,9 @@ public:
         #endif
         #if SAFE_PTR_DEBUG_BOOL
             std::lock_guard<std::mutex> lock(_mtx);
-            other._check_for_usage_after_free();
-            --_get_ref_count_nothrow();
-            if (_get_ref_count_nothrow()==0 && !_get_is_deleted_nothrow()) {
+            other._check_for_use_after_free();
+            --_get_ref_count();
+            if (_get_ref_count()==0 && !_get_is_deleted()) {
                 _warning("Memory was leaked.");
             }
             this->_memory_id = _get_new_memory_id();
@@ -135,20 +166,19 @@ public:
     }
 
     // move assignment operator
-    SafePtr& operator=(SafePtr&& other)
-    noexcept(!SAFE_PTR_DEBUG_BOOL && !SAFE_PTR_TEST_BOOL) {
+    SafePtr& operator=(SafePtr&& other) noexcept(!SAFE_PTR_TEST_BOOL) {
         #ifndef SAFE_PTR_DISABLE_SELF_ASSIGNING_CHECKING
             if (this != &other) {
         #endif
         #if SAFE_PTR_DEBUG_BOOL
             std::lock_guard<std::mutex> lock(_mtx);
-            other._check_for_usage_after_free();
-            --_get_ref_count_nothrow();
-            if (_get_ref_count_nothrow()==0 && !_get_is_deleted_nothrow()) {
+            other._check_for_use_after_free();
+            --_get_ref_count();
+            if (_get_ref_count()==0 && !_get_is_deleted()) {
                 _warning("Memory was leaked.");
             }
             this->_memory_id = other._memory_id;
-            ++_get_ref_count_nothrow();
+            ++_get_ref_count();
         #endif
         this->_begin = other._begin;
         this->_end = other._end;
@@ -158,86 +188,84 @@ public:
         return *this;
     }
 
-    void free() const noexcept(!SAFE_PTR_DEBUG_BOOL && !SAFE_PTR_TEST_BOOL) {
+    void free() const {
         #if SAFE_PTR_DEBUG_BOOL
             std::lock_guard<std::mutex> lock(_mtx);
-            if(_get_is_deleted_nothrow() == true) {
+            if(_get_is_deleted() == true) {
                 throw std::logic_error(
                     "it was tried to free the same memory pointer twice"
                 );
             }
-            _get_is_deleted_nothrow() = true;
+            _get_is_deleted() = true;
         #endif
         delete[] _begin;
     }
 
-    size_t size() const noexcept(!SAFE_PTR_TEST_BOOL) {
+    size_t size() const {
         #if SAFE_PTR_DEBUG_BOOL
-            _check_for_usage_after_free();
+            _check_for_use_after_free();
         #endif
         return _end - _begin;
     }
 
-    const T* begin() const noexcept(!SAFE_PTR_TEST_BOOL) {
+    const T* begin() const {
         #if SAFE_PTR_DEBUG_BOOL
-            _check_for_usage_after_free();
+            _check_for_use_after_free();
         #endif
         return _begin;
     }
 
-    T* begin() noexcept(!SAFE_PTR_TEST_BOOL) {
+    T* begin() {
         return const_cast<T*>(
             const_cast<const SafePtr<T>&>(*this).begin()
         );
     }
 
-    const T* cbegin() const noexcept(!SAFE_PTR_TEST_BOOL) {
+    const T* cbegin() const {
         return begin();
     }
 
-    const T* cbegin() noexcept(!SAFE_PTR_TEST_BOOL) {
+    const T* cbegin() {
         return const_cast<const SafePtr<T>&>(*this).cbegin();
     }
 
-    const T* end() const noexcept(!SAFE_PTR_TEST_BOOL) {
+    const T* end() const {
         #if SAFE_PTR_DEBUG_BOOL
-            _check_for_usage_after_free();
+            _check_for_use_after_free();
         #endif
         return _end;
     }
 
-    T* end() noexcept(!SAFE_PTR_TEST_BOOL) {
+    T* end() {
         return const_cast<T*>(
             const_cast<const SafePtr<T>&>(*this).end()
         );
     }
 
-    const T* cend() const noexcept(!SAFE_PTR_TEST_BOOL) {
+    const T* cend() const {
         return end();
     }
 
-    const T* cend() noexcept(!SAFE_PTR_TEST_BOOL) {
+    const T* cend() {
         return const_cast<const SafePtr<T>&>(*this).cend();
-        
     }
 
-    const T& operator[](const size_t& index)
-    const noexcept(!SAFE_PTR_TEST_BOOL) {
+    const T& operator[](const size_t index) const {
         #if SAFE_PTR_DEBUG_BOOL
-            _check_for_usage_after_free();
+            _check_for_use_after_free();
         #endif
         return *(_begin + index);
     }
 
-    T& operator[](const size_t& index) noexcept(!SAFE_PTR_TEST_BOOL) {
+    T& operator[](const size_t index) {
         return const_cast<T&>(
             const_cast<const SafePtr<T>&>(*this)[index]
         );
     }
 
-    const T& at(const size_t& index) const {
+    const T& at(const size_t index) const {
         #if SAFE_PTR_DEBUG_BOOL
-            _check_for_usage_after_free();
+            _check_for_use_after_free();
         #endif
         if (index >= this->size()) {
             throw std::out_of_range(
@@ -247,53 +275,53 @@ public:
         return *(_begin + index);
     }
 
-    T& at(const size_t& index) {
+    T& at(const size_t index) {
         return const_cast<T&>(
             const_cast<const SafePtr<T>&>(*this).at(index)
         );
     }
 
-    bool empty() const noexcept(!SAFE_PTR_TEST_BOOL) {
+    bool empty() const {
         #if SAFE_PTR_DEBUG_BOOL
-            _check_for_usage_after_free();
+            _check_for_use_after_free();
         #endif
         return this->size() == 0;
     }
 
-    const T* data() const noexcept(!SAFE_PTR_TEST_BOOL) {
+    const T* data() const {
         #if SAFE_PTR_DEBUG_BOOL
-            _check_for_usage_after_free();
+            _check_for_use_after_free();
         #endif
         return _begin;
     }
 
-    T* data() noexcept(!SAFE_PTR_TEST_BOOL) {
+    T* data() {
         return const_cast<T*>(
             const_cast<const SafePtr<T>&>(*this).data()
         );
     }
 
-    const T& front() const noexcept(!SAFE_PTR_TEST_BOOL) {
+    const T& front() const {
         #if SAFE_PTR_DEBUG_BOOL
-            _check_for_usage_after_free();
+            _check_for_use_after_free();
         #endif
         return *(this->_begin);
     }
 
-    T& front() noexcept(!SAFE_PTR_TEST_BOOL) {
+    T& front() {
         return const_cast<T&> (
             const_cast<const SafePtr<T>&>(*this).front()
         );
     }
 
-    const T& back() const noexcept(!SAFE_PTR_TEST_BOOL) {
+    const T& back() const {
         #if SAFE_PTR_DEBUG_BOOL
-            _check_for_usage_after_free();
+            _check_for_use_after_free();
         #endif
         return *(this->_end-1);
     }
 
-    T& back() noexcept(!SAFE_PTR_TEST_BOOL) {
+    T& back() {
         return const_cast<T&>(
             const_cast<const SafePtr<T>&>(*this).back()
         );
@@ -301,22 +329,22 @@ public:
 
     void fill(const T& value) {
         #if SAFE_PTR_DEBUG_BOOL
-            _check_for_usage_after_free();
+            _check_for_use_after_free();
         #endif
         for (auto& p : *this) {
             p = value;
         }
     }
 
-    void print_all(const char* const variable_name = "SafePtr::print_all") 
-    const {
+    void
+    print_all(const char* const variable_name = "SafePtr::print_all") const {
         #if SAFE_PTR_DEBUG_BOOL
-            _check_for_usage_after_free();
+            _check_for_use_after_free();
         #endif
         std::cout << variable_name << ": {\n";
         if (!empty()) {
             size_t idx = 0;
-            for (const T* it=cbegin(); it!=cend()-1; ++it) {
+            for (const T* it = cbegin(); it != cend()-1; ++it) {
                 std::cout << "    " << idx << ": " << *it << ",\n";
                 ++idx;
             }
@@ -327,7 +355,7 @@ public:
 
     void print(const char* const variable_name = "SafePtr::print") const {
         #if SAFE_PTR_DEBUG_BOOL
-            _check_for_usage_after_free();
+            _check_for_use_after_free();
         #endif
 
         constexpr size_t MAX_ELEMENTS_TO_PRINT = 26;
@@ -346,7 +374,7 @@ public:
         }
         idx = size() - ELEMENTS_AFTER_DOTS;
         std::cout << "    ...\n";
-        for (const T* it=cend()-ELEMENTS_AFTER_DOTS; it!=cend()-1; ++it) {
+        for (const T* it = cend()-ELEMENTS_AFTER_DOTS; it != cend()-1; ++it) {
             std::cout << "    " << idx << ": " << *it << ",\n";
             ++idx;
         }
@@ -356,7 +384,48 @@ public:
 
 private:
     T* _begin; // points to the first element
-    T* _end;   // points to the byte after the last byte of the element
+    T* _end;   // points to the byte after the last byte of the last element
+
+    // C++11-compatible replacement for std::void_t (which is C++17)
+    template<typename...>
+    struct _sp_void { using type = void; };
+    template<typename... Ts>
+    using _sp_void_t = typename _sp_void<Ts...>::type;
+
+    // Detects whether subtracting the iterators to get the size is valid.
+    template<typename It, typename = void>
+    struct _sp_has_subtraction : std::false_type {};
+
+    template<typename It>
+    struct _sp_has_subtraction<
+        It,
+        _sp_void_t<decltype(std::declval<It>() - std::declval<It>())>
+    > : std::true_type {};
+
+    // Allocates memory by subtracting the iterators to get the size (faster).
+    template<typename InputIt>
+    void _construct_from_range(
+        InputIt first, InputIt last, std::true_type
+    ) {
+        const size_t n = static_cast<size_t>(last - first);
+        _begin = new T[n];
+        _end = _begin + n;
+        std::copy(first, last, _begin);
+    }
+
+    // Allocates memory by iterating along the range to count size (slower).
+    template<typename InputIt>
+    void _construct_from_range(
+        InputIt first, InputIt last, std::false_type
+    ) {
+        size_t n = 0;
+        for (InputIt it = first; it != last; ++it) {
+            ++n;
+        }
+        _begin = new T[n];
+        _end = _begin + n;
+        std::copy(first, last, _begin);
+    }
 
     #if SAFE_PTR_DEBUG_BOOL
         size_t _memory_id;
@@ -366,7 +435,7 @@ private:
         static bool _id_overflow_occurred;
         static std::mutex _mtx;
 
-        static size_t& _get_new_memory_id() noexcept {
+        static size_t& _get_new_memory_id() {
             ++_next_available_memory_id;
             if (_next_available_memory_id == 0) {
                 _id_overflow_occurred = true;
@@ -382,23 +451,18 @@ private:
             }
         }
 
-        void _check_for_usage_after_free()
-        const noexcept(!SAFE_PTR_TEST_BOOL) {
-            if (_get_is_deleted_nothrow() == true) {
+        void _check_for_use_after_free() const noexcept(!SAFE_PTR_TEST_BOOL) {
+            if (_get_is_deleted() == true) {
                 _warning("Tried to access data after free() was called.");
             }
         }
 
-        size_t& _get_ref_count_nothrow() const noexcept {
-            typename std::unordered_map<size_t,size_t>::iterator it = 
-                _ref_count.find(_memory_id);
-            return it->second;
+        size_t& _get_ref_count() const {
+            return _ref_count.at(_memory_id);
         }
 
-        bool& _get_is_deleted_nothrow() const noexcept {
-            typename std::unordered_map<size_t,bool>::iterator it =
-                _is_deleted.find(_memory_id);
-            return it->second;
+        bool& _get_is_deleted() const {
+            return _is_deleted.at(_memory_id);
         }
 
         void _warning(const char* const msg) const {
