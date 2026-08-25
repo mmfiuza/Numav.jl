@@ -49,20 +49,20 @@ function _check_if_it_can_run(s::SimulationFemHelmholtz)
     _check_if_did_run(s)
     if isempty(s._hdf5_file_path)
         error("Result export path not defined." *
-              " Call set_result_export_path to do so.")
+              " Call set_result_export_path! to do so.")
     end
     if !s._is_any_source_defined
         error("No sound source was defined." *
-              " Call add_sound_source to do so.")
+              " Call add_sound_source! to do so.")
     end
     if !s._is_freq_defined
         error("Simulation frequency was not defined." *
-              " Call set_maximum_frequency to do so.")
+              " Call set_maximum_frequency! to do so.")
     end
     for evpg in s._existing_evpg
         if !haskey(s._evpg_ivpg_bimap, evpg)
             error("Volume physical group $evpg was not assigned." *
-                  " Call add_volume_material to do so.")
+                  " Call add_volume_material! to do so.")
         end
     end
 end
@@ -200,7 +200,7 @@ function add_sound_source!(
     end
     if coordinates isa AbstractVector{<:Real} && length(coordinates) != 3
         throw(ArgumentError(
-            "x,y,z coordinates does not have 3 components"
+            "x,y,z coordinates do not have 3 components"
         ))
     end
     if !isnothing(volume_velocity) && !isnothing(physical_group)
