@@ -108,24 +108,16 @@ void SimulationFemHelmTet<O>::_allocate_b()
 {
     std::unordered_set<uint64_t> existing_source_nodes;
     for (uint64_t vsei = 0UL; vsei != _vsei_count; ++vsei) {
-        const uint64_t sei = _vsei_to_sei[vsei];
         for (uint64_t enis = 0UL; enis != ENIS_COUNT<O>; ++enis) {
-            const uint64_t ni = _sei_to_ni[sei][enis];
+            const uint64_t ni = _vsei_to_ni[vsei][enis];
             existing_source_nodes.insert(ni);
         }
     }
     for (uint64_t vpi = 0UL; vpi != _vpi_count; ++vpi) {
         existing_source_nodes.insert(_vpi_to_ni[vpi]);
     }
-    for (uint64_t psei = 0UL; psei != _psei_count; ++psei) {
-        const uint64_t sei = _psei_to_sei[psei];
-        for (uint64_t enis = 0UL; enis != ENIS_COUNT<O>; ++enis) {
-            const uint64_t ni = _sei_to_ni[sei][enis];
-            existing_source_nodes.insert(ni);
-        }
-    }
-    for (uint64_t ppi = 0UL; ppi != _ppi_count; ++ppi) {
-        existing_source_nodes.insert(_ppi_to_ni[ppi]);
+    for (uint64_t pni = 0UL; pni != _pni_count; ++pni) {
+        existing_source_nodes.insert(_pni_to_ni[pni]);
     }
     _b_row_idx = fz::SafePtr<uint64_t>(existing_source_nodes.size());
     std::copy(
@@ -391,10 +383,9 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_impedance()
     for (uint64_t isei = 0UL; isei != _isei_count; ++isei)
     {
         const uint64_t ispgi = _isei_to_ispgi[isei];
-        const uint64_t sei = _isei_to_sei[isei];
         for (const auto& eni : ENI_PAIRS) {
             const std::pair<uint64_t,uint64_t> pair = make_ordered_rowcol_pair(
-                _sei_to_ni[sei][eni[0UL]], _sei_to_ni[sei][eni[1UL]]
+                _isei_to_ni[isei][eni[0UL]], _isei_to_ni[isei][eni[1UL]]
             );
             if (!(ispgi_to_map_to_fipi[ispgi].count(pair) > 0)) {
                 const uint64_t fipi = ispgi_to_map_to_fipi[ispgi].size();
@@ -419,14 +410,13 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_impedance()
     for (uint64_t isei = 0UL; isei != _isei_count; ++isei)
     {
         const uint64_t ispgi = _isei_to_ispgi[isei];
-        const uint64_t sei = _isei_to_sei[isei];
         
         // Create _ispgi_to_ptr_in_a
         for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci)
         {
             const std::pair<uint64_t,uint64_t> pair = make_ordered_rowcol_pair(
-                _sei_to_ni[sei][ENI_PAIRS[nci][0UL]],
-                _sei_to_ni[sei][ENI_PAIRS[nci][1UL]]
+                _isei_to_ni[isei][ENI_PAIRS[nci][0UL]],
+                _isei_to_ni[isei][ENI_PAIRS[nci][1UL]]
             );
             fipi_damp[nci] = ispgi_to_map_to_fipi[ispgi].at(pair);
             
@@ -502,7 +492,7 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_impedance()
         #elif NUMAV_DAMP_INTEGRATION_METHOD == NUMAV_ANALYTIC
             std::array<std::array<Float,DIM>,3UL> vertex_coords;
             for (uint64_t eni = 0UL; eni != 3UL; ++eni) {
-                const uint64_t ni = _sei_to_ni[sei][eni];
+                const uint64_t ni = _isei_to_ni[isei][eni];
                 vertex_coords[eni] = _ni_to_xyz[ni];
             }
             const Float triangle_area = get_triangle_area(vertex_coords);
@@ -532,9 +522,8 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_velocity()
     );
     for (uint64_t vsei = 0UL; vsei != _vsei_count; ++vsei) {
         const uint64_t ispgv = _vsei_to_ispgv[vsei];
-        const uint64_t sei = _vsei_to_sei[vsei];
         for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni) {
-            const uint64_t ni = _sei_to_ni[sei][eni];
+            const uint64_t ni = _vsei_to_ni[vsei][eni];
             if (!(ispgv_to_map_to_fipi[ispgv].count(ni) > 0)) {
                 const uint64_t fipi = ispgv_to_map_to_fipi[ispgv].size();
                 ispgv_to_map_to_fipi[ispgv].insert({ni, fipi});
@@ -558,12 +547,11 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_velocity()
     for (uint64_t vsei = 0UL; vsei != _vsei_count; ++vsei)
     {
         const uint64_t ispgv = _vsei_to_ispgv[vsei];
-        const uint64_t sei = _vsei_to_sei[vsei];
 
         // Create _ispgv_to_ptr_in_b
         for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni)
         {
-            const uint64_t ni = _sei_to_ni[sei][eni];
+            const uint64_t ni = _vsei_to_ni[vsei][eni];
             fipi_forc[eni] = ispgv_to_map_to_fipi[ispgv].at(ni);
             
             const uint64_t* const ni_ptr = std::lower_bound(
@@ -622,7 +610,7 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_velocity()
         #elif NUMAV_FORC_INTEGRATION_METHOD == NUMAV_ANALYTIC
             std::array<std::array<Float,DIM>,3UL> vertex_coords;
             for (uint64_t eni = 0UL; eni != 3UL; ++eni) {
-                const uint64_t ni = _sei_to_ni[sei][eni];
+                const uint64_t ni = _vsei_to_ni[vsei][eni];
                 vertex_coords[eni] = _ni_to_xyz[ni];
             }
             const Float triangle_area = get_triangle_area(vertex_coords);
@@ -658,105 +646,24 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_point_velocity()
     }
 }
 
-template<typename T>
-std::unordered_map<std::vector<uint64_t>, std::vector<T>>
-find_set_intersections(const fz::SafePtr<fz::SafePtr<T>>& sets) {
-    // map each element to the indices of sets that contain it
-    std::unordered_map<T, std::vector<uint64_t>> element_to_sets;
-    for (uint64_t set_index = 0UL; set_index != sets.size(); ++set_index) {
-        for (const auto& element : sets[set_index]) {
-            element_to_sets[element].push_back(set_index);
-        }
-    }
-    // group elements by which sets contain them
-    std::unordered_map<std::vector<uint64_t>, std::vector<T>> intersections;
-    for (const auto& [element, set_indices] : element_to_sets) {
-        std::vector<uint64_t> sorted_indices = set_indices;
-        std::sort(sorted_indices.begin(), sorted_indices.end());
-        intersections[sorted_indices].push_back(element);
-    }
-    return intersections;
-}
-
 template<ElementOrder O>
 void SimulationFemHelmTet<O>::_assemble_fi_part_for_pressure()
 {
-    // create the mathmatical sets of nodes for each pressure value assigned
-    fz::SafePtr<fz::SafePtr<uint64_t>> sets(_ppi_count + _ispgp_count);
-    for (uint64_t ppi = 0UL; ppi != _ppi_count; ++ppi) {
-        sets[ppi] = fz::SafePtr<uint64_t>(1UL); // TODO: review this
-        sets[ppi][0UL] = _ppi_to_ni[ppi];
-    }
-    for (uint64_t ispgp = 0UL; ispgp != _ispgp_count; ++ispgp) {
-        std::set<uint64_t> unique_nodes; // TODO: review the use of set
-        for (uint64_t psei = 0UL; psei != _psei_count; ++psei) {
-            if (_psei_to_ispgp[psei] == ispgp){
-                const uint64_t sei = _psei_to_sei[psei];
-                for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni) {
-                    const uint64_t ni = _sei_to_ni[sei][eni];
-                    unique_nodes.insert(ni);
-                }
-            }
-        }
-        sets[_ppi_count+ispgp] = fz::SafePtr<uint64_t>(unique_nodes.size());
-        uint64_t i = 0UL;
-        for (const auto& ni : unique_nodes) {
-            sets[_ppi_count+ispgp][i] = ni;
-            ++i;
-        }
-    }
-    std::unordered_map<std::vector<uint64_t>,std::vector<uint64_t>>
-        intersections = find_set_intersections(sets);
-    for (auto& set : sets) {
-        set.free();
-    }
-    sets.free();
+    // define _pvi_to_ptr_in_a and _pvi_to_ptr_in_b
+    _pvi_to_ptr_in_a = fz::SafePtr<fz::SafePtr<Cmplx*>>(_pvi_count);
+    _pvi_to_ptr_in_b = fz::SafePtr<fz::SafePtr<Cmplx*>>(_pvi_count);
+    for (uint64_t pvi = 0UL; pvi != _pvi_count; ++pvi) {
+        const uint64_t pni_count = _pvi_to_pni_count[pvi];
+        _pvi_to_ptr_in_a[pvi] = fz::SafePtr<Cmplx*>(pni_count);
+        _pvi_to_ptr_in_b[pvi] = fz::SafePtr<Cmplx*>(pni_count);
+        uint64_t pni = 0UL;
+        for (uint64_t fipi = 0UL; fipi != pni_count; ++fipi) {
+            const uint64_t ni = _pni_to_ni[pni];
 
-    // calculate the average pressure between intersected elements in the sets
-    _apvi_count = intersections.size();
-    _apvi_to_pressure = fz::SafePtr<FuncFloatToCmplx>(_apvi_count);
-    uint64_t apvi = 0UL;
-    for (auto& [set_indexes, ni_vector] : intersections) {
-        auto average = [this, set_indexes = set_indexes](const Float& freq) {
-            Cmplx sum = Cmplx(0_F, 0_F);
-            for (const auto& set_index : set_indexes) {
-                if (set_index < _ppi_count) {
-                    const uint64_t& ppi = set_index;
-                    sum += (_ppi_to_pressure[ppi])(freq);
-                }
-                else {
-                    const uint64_t ispgp = set_index - _ppi_count;
-                    sum += (_ispgp_to_pressure[ispgp])(freq);
-                }
-            }
-            return sum / static_cast<Float>(set_indexes.size());
-        };
-        _apvi_to_pressure[apvi] = average;
-        ++apvi;
-    }
-
-    // define _apvi_to_ptr_in_a and _apvi_to_ptr_in_b
-    _apvi_to_ptr_in_a = fz::SafePtr<fz::SafePtr<Cmplx*>>(_apvi_count);
-    _apvi_to_ptr_in_b = fz::SafePtr<fz::SafePtr<Cmplx*>>(_apvi_count);
-    apvi = 0UL;
-    for (auto& [set_indexes, ni_vector] : intersections) {
-        _apvi_to_ptr_in_a[apvi] = fz::SafePtr<Cmplx*>(ni_vector.size());
-        _apvi_to_ptr_in_b[apvi] = fz::SafePtr<Cmplx*>(ni_vector.size());
-        uint64_t fipi = 0UL;
-        for (const auto& ni : ni_vector) {
+            // _pvi_to_ptr_in_a
             #if NUMAV_SYSTEM_SOLVER == NUMAV_INTERNAL
-                // _apvi_to_ptr_in_a
-                _apvi_to_ptr_in_a[apvi][fipi] = _a_diag.data() + ni;
-                const uint64_t* const ni_ptr = std::lower_bound(
-                    _b_row_idx.begin(), _b_row_idx.end(), ni
-                );
-                // _apvi_to_ptr_in_b
-                const uint64_t ptrdiff_b = ni_ptr - _b_row_idx.begin();
-                _apvi_to_ptr_in_b[apvi][fipi] = _b_vals.begin() + ptrdiff_b;
-                ++fipi;
-                continue;
+                _pvi_to_ptr_in_a[pvi][fipi] = _a_diag.data() + ni;
             #else
-                // _apvi_to_ptr_in_a
                 const std::pair<uint64_t,uint64_t> pair = 
                     std::make_pair(ni, ni);
                 const std::pair<uint64_t,uint64_t>* const pair_ptr =
@@ -766,21 +673,19 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_pressure()
                         pair,
                         compare_pair<uint64_t>
                     );
-                const uint64_t ptrdiff_a = 
-                    pair_ptr - _ni_connections.begin();
-                _apvi_to_ptr_in_a[apvi][fipi] = _a_vals.begin() + ptrdiff_a;
-                
-                // _apvi_to_ptr_in_b
-                const uint64_t* const ni_ptr = std::lower_bound(
-                    _b_row_idx.begin(), _b_row_idx.end(), ni
-                );
-                const uint64_t ptrdiff_b = ni_ptr - _b_row_idx.begin();
-                _apvi_to_ptr_in_b[apvi][fipi] = _b_vals.begin() + ptrdiff_b;
-                
-                ++fipi;
+                const uint64_t ptrdiff_a = pair_ptr - _ni_connections.begin();
+                _pvi_to_ptr_in_a[pvi][fipi] = _a_vals.begin() + ptrdiff_a;
             #endif
+
+            // _pvi_to_ptr_in_b
+            const uint64_t* const ni_ptr = std::lower_bound(
+                _b_row_idx.begin(), _b_row_idx.end(), ni
+            );
+            const uint64_t ptrdiff_b = ni_ptr - _b_row_idx.begin();
+            _pvi_to_ptr_in_b[pvi][fipi] = _b_vals.begin() + ptrdiff_b;
+            
+            ++pni;
         }
-        ++apvi;
     }
 }
 

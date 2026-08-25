@@ -7,6 +7,7 @@ authors = ["Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>"]
 projects = ["docs"]
 
 [deps]
+Bijections = "e2ed5e7c-b2de-5872-ae92-c73ca462fb04"
 CxxWrap = "1f15a43c-97ca-5a2a-ae31-89f07a497df4"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 ExternalDocstrings = "e189563c-0753-4f5e-ad5c-be4293c83fb4"
@@ -20,6 +21,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 numav_julia_jll = "57785b2f-0453-510f-a9c0-981eddda5fac"
 
 [compat]
+Bijections = "0.2"
 CxxWrap = "0.17"
 DelimitedFiles = "1"
 ExternalDocstrings = "0.1"

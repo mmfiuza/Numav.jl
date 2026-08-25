@@ -11,28 +11,6 @@ namespace numav {
 template<ElementOrder O>
 void SimulationFemHelmTet<O>::_clear_data_not_used_in_freq_iterations()
 {
-    // TODO: call shrink_to_fit in all std::vectors here  
-
-    _existing_evpg.clear();
-    _existing_espg.clear();
-
-    _evpg_ivpg_bimap.clear();
-    _espg_ispgi_bimap.clear();
-    _espg_ispgv_bimap.clear();
-    _espg_ispgp_bimap.clear();
-    
-    _ni_to_xyz.free();
-    _sei_to_ni.free();
-    _vei_to_ni.free();
-    _sei_to_espg.free();
-    _vei_to_evpg.free();
-    _isei_to_sei.free();
-    _vsei_to_sei.free();
-    _psei_to_sei.free();
-    _vei_to_ivpg.free();
-    _isei_to_ispgi.free();
-    _vsei_to_ispgv.free();
-    _psei_to_ispgp.free();
     _ni_connections.free();
 }
 
@@ -40,7 +18,6 @@ template<ElementOrder O>
 void SimulationFemHelmTet<O>::_solve_systems()
 {
     H5::DataSet pressure_data_set = _begin_hdf5_file();
-    _write_simulation_inputs_to_hdf5_file();
 
     _clear_data_not_used_in_freq_iterations();
 
@@ -72,14 +49,14 @@ void SimulationFemHelmTet<O>::_solve_systems()
 
         // add point volume velocity to b vector
         for (uint64_t vpi = 0UL; vpi != _vpi_count; ++vpi) {
-            const Cmplx volvel = (_vpi_to_volvel[vpi])(freq);
+            const Cmplx volvel = _vpi_to_volvel[fi*_vpi_count + vpi];
             *_vpi_to_ptr_in_b[vpi] += Cmplx(0_F, -omega) * volvel;
         }
 
         // add surface velocity to b vector
         for (uint64_t ispgv = 0UL; ispgv != _ispgv_count; ++ispgv)
         {
-            const Cmplx velocity = (_ispgv_to_velocity[ispgv])(freq);
+            const Cmplx velocity = _ispgv_to_velocity[fi*_ispgv_count + ispgv];
             const Cmplx fd_part = Cmplx(0_F, -omega) * velocity;
             const uint64_t fipi_count = _ispgv_to_ptr_in_b[ispgv].size();
             for (uint64_t fipi = 0UL; fipi != fipi_count; ++fipi) {
@@ -91,7 +68,7 @@ void SimulationFemHelmTet<O>::_solve_systems()
         // add damping matrix to a
         for (uint64_t ispgi = 0UL; ispgi != _ispgi_count; ++ispgi)
         {
-            const Cmplx impedance = _ispgi_to_impedance[ispgi](freq);
+            const Cmplx impedance = _ispgi_to_impedance[fi*_ispgi_count + ispgi];
             const Cmplx damp_fd_part = Cmplx(0_F, omega) / impedance;
             const uint64_t fipi_count = _ispgi_to_ptr_in_a[ispgi].size();
             for (uint64_t fipi = 0UL; fipi != fipi_count; ++fipi) {
@@ -103,8 +80,8 @@ void SimulationFemHelmTet<O>::_solve_systems()
         // add stiffness and mass matrix to a
         for (uint64_t ivpg = 0UL; ivpg != _ivpg_count; ++ivpg)
         {
-            const Cmplx density = (_ivpg_to_volprop[ivpg].density)(freq);
-            const Cmplx soundspeed = (_ivpg_to_volprop[ivpg].soundspeed)(freq);
+            const Cmplx density = _ivpg_to_density[fi*_ivpg_count + ivpg];
+            const Cmplx soundspeed = _ivpg_to_soundspeed[fi*_ivpg_count + ivpg];
             const Cmplx stif_fd_part = Cmplx(1_F, 0_F) / density;
             const Cmplx mass_fd_part =
                 - omega_squared / (density * soundspeed * soundspeed);
@@ -118,13 +95,13 @@ void SimulationFemHelmTet<O>::_solve_systems()
         }
 
         // add pressure to a and b
-        for (uint64_t apvi = 0UL; apvi != _apvi_count; ++apvi)
+        for (uint64_t pvi = 0UL; pvi != _pvi_count; ++pvi)
         {
-            const Cmplx pressure = (_apvi_to_pressure[apvi])(freq);
-            const uint64_t fipi_count = _apvi_to_ptr_in_a[apvi].size();
+            const Cmplx pressure = _pvi_to_pressure[fi*_pvi_count + pvi];
+            const uint64_t fipi_count = _pvi_to_pni_count[pvi];
             for (uint64_t fipi = 0UL; fipi != fipi_count; ++fipi) {
-                *_apvi_to_ptr_in_a[apvi][fipi] += PENALTY_METHOD_CONSTANT;
-                *_apvi_to_ptr_in_b[apvi][fipi] +=
+                *_pvi_to_ptr_in_a[pvi][fipi] += PENALTY_METHOD_CONSTANT;
+                *_pvi_to_ptr_in_b[pvi][fipi] +=
                     PENALTY_METHOD_CONSTANT * pressure;
             }
         }
@@ -161,8 +138,6 @@ void SimulationFemHelmTet<O>::_solve_systems()
     _hdf5_file.close();
     log::finish_progress_bar();
     log::print_finish_time();
-
-    _did_run = true;
 }
 
 } // namespace numav

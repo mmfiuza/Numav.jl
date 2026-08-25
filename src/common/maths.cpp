@@ -9,35 +9,6 @@
 
 namespace numav {
 
-fz::SafePtr<Float> linspace(
-    const Float start, const Float finish, const uint64_t num_points
-) {
-    assert(num_points != 0UL && num_points != 1UL);
-    fz::SafePtr<Float> result(num_points);
-    Float step = (finish - start) / static_cast<Float>(num_points - 1UL);
-    result.front() = start;
-    for (Float* it = result.begin()+1UL; it != result.end()-1UL; ++it) {
-        *it = *(it - 1UL) + step;
-    }
-    result.back() = finish;
-    return result;
-}
-
-fz::SafePtr<Float> cubspace(
-    const Float start, const Float finish, const uint64_t num_points
-) {
-    assert(num_points != 0UL && num_points != 1UL);
-    fz::SafePtr<Float> x = linspace(0_F, 1_F, num_points);
-    const Float& a3 = power<3UL>(start);
-    const Float& b3 = power<3UL>(finish);
-    fz::SafePtr<Float> result(num_points);
-    for (uint64_t i = 0UL; i != num_points; ++i) {
-        result[i] = std::pow(a3 + (b3 - a3) * x[i], 1_F/3_F);
-    }
-    x.free();
-    return result;
-}
-
 Float get_triangle_area(const std::array<std::array<Float,3UL>,3UL> coords)
 {
     const Float a = std::sqrt(

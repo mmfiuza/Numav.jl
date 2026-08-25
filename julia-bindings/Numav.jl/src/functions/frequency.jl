@@ -10,7 +10,7 @@ export
 const SimulationWithFreqDomain = Union{SimulationFemHelmholtz}
 
 function set_frequency!( 
-    simulation::SimulationWithFreqDomain;
+    s::SimulationWithFreqDomain;
     max::Union{Real, Nothing} = nothing,
     min::Union{Real, Nothing} = nothing,
     length::Union{Integer, Nothing} = nothing,
@@ -60,15 +60,13 @@ function set_frequency!(
             end
         end
     end
-    simulation._fi_to_freq = Float64.(Vector(vector))
-    _cpp_set_frequency_vector!(
-        simulation._cpp_simulation,
-        simulation._fi_to_freq
-    )
+    s._fi_to_freq = Float64.(Vector(vector))
+    s._fi_count = Main.length(s._fi_to_freq)
+    s._is_freq_defined = true
 end
 
 function get_frequency_vector(
-    simulation::SimulationWithFreqDomain
+    s::SimulationWithFreqDomain
 )
-    return copy(simulation._fi_to_freq)
+    return copy(s._fi_to_freq)
 end

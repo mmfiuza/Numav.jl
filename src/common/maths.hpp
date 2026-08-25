@@ -12,14 +12,6 @@
 
 namespace numav {
 
-fz::SafePtr<Float> linspace(
-    const Float start, const Float finish, const uint64_t num_points
-);
-
-fz::SafePtr<Float> cubspace(
-    const Float start, const Float finish, const uint64_t num_points
-);
-
 Float get_triangle_area(
     const std::array<std::array<Float,3UL>,3UL> coords
 );

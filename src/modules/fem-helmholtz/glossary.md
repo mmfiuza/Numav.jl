@@ -47,7 +47,9 @@
 
 - PPI (Pressure Point Index)
 
-- APVI (Average Pressure Value Index)
+- PNI (Pressure Node Index)
+
+- PVI (Pressure Value Index)
 
 - RI (Receiver Index)
 

@@ -46,14 +46,6 @@ T parse(std::string_view str) {
     return value;
 }
 
-FuncFloatToCmplx const2func(
-    const Cmplx constant
-);
-
-FuncFloatToCmplx table2func(
-    const char* const impedance_text_file
-);
-
 template<typename T>
 std::tuple<T,T> make_ascending_tuple(const T a, const T b) {
     return a<b ? std::make_tuple(a,b) : std::make_tuple(b,a);

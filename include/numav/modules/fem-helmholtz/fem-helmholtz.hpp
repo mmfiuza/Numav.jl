@@ -16,6 +16,7 @@
 #include "indicators/progress_bar.hpp"
 #include "H5Cpp.h"
 #include "boost/bimap.hpp"
+#include "common/log.hpp"
 
 namespace numav {
 
@@ -55,23 +56,6 @@ template<ElementOrder O> constexpr uint64_t EXTRA_ENIV_COUNT = [] {
     return ENIV_COUNT<O> - ENIV_COUNT<ElementOrder::LINEAR>;
 }();
 
-enum class SourceType : uint64_t {
-    POINT,
-    SURFACE
-};
-
-enum class PhysicalQuantity : uint64_t {
-    VOLUME_VELOCITY,
-    PARTICLE_VELOCITY,
-    PRESSURE,
-    IMPEDANCE
-};
-
-enum class FrequencySamplingDensity : uint64_t {
-    CONSTANT,
-    QUADRATIC
-};
-
 template<ElementOrder O>
 class Simulation<
     NumericalMethod::FEM,
@@ -86,51 +70,7 @@ public:
     Simulation& operator=(const Simulation&) = delete;
     Simulation(Simulation&&) noexcept;
     Simulation& operator=(Simulation&&) noexcept;
-    
-    void set_frequency_vector(
-        const std::vector<Float>&
-    );
-    void load_mesh(
-        const Float* const ni_to_xyz,
-        const uint64_t* const sei_to_ni,
-        const uint64_t* const vei_to_ni,
-        const uint64_t* const sei_to_espg,
-        const uint64_t* const vei_to_evpg,
-        const uint64_t ni_count,
-        const uint64_t sei_count,
-        const uint64_t vei_count
-    );
-    void add_volume_material(
-        const uint64_t, const FuncFloatToCmplx&, const FuncFloatToCmplx&
-    );
-    void add_surface_material(
-        const uint64_t, const PhysicalQuantity, const FuncFloatToCmplx&
-    );
-    void add_sound_source(
-        const SourceType, const std::array<Float,3UL>,
-        const PhysicalQuantity, const FuncFloatToCmplx&
-    );
-    void add_sound_source(
-        const SourceType, const uint64_t,
-        const PhysicalQuantity, const FuncFloatToCmplx&
-    );
-    void set_result_export_path(
-        const char* const
-    );
-    void run(
-    );
 
-private:
-    uint64_t _get_closest_point(const std::array<Float,3UL> point_coords);
-    void _check_if_mesh_is_defined();
-    void _check_if_did_run();
-    void _validate_espg(const uint64_t espg);
-    void _check_if_it_can_run();
-    void _organize_volume_physical_group_data();
-    void _organize_pressure_physical_group_data();
-    void _organize_impedance_physical_group_data();
-    void _organize_velocity_physical_group_data();
-    void _organize_physical_group_data();
     void _allocate_a();
     void _allocate_b();
     void _allocate_x();
@@ -142,7 +82,6 @@ private:
     void _assemble_freq_independent_parts();
     void _solve_systems();
     H5::DataSet _begin_hdf5_file();
-    void _write_simulation_inputs_to_hdf5_file();
     void _write_solution_for_one_freq(H5::DataSet& ds, const uint64_t fi);
     void _clear_data_not_used_in_freq_iterations();
     #if NUMAV_SYSTEM_SOLVER == NUMAV_INTERNAL
@@ -161,53 +100,35 @@ private:
         void _terminate_mumps_solver();
     #endif
     
-    // volume element properties
-    struct _VolProp {
-        FuncFloatToCmplx density;
-        FuncFloatToCmplx soundspeed;
-    };
-
     H5::H5File _hdf5_file;
 
-    std::unordered_set<uint64_t> _existing_evpg;
-    std::unordered_set<uint64_t> _existing_espg;
-
-    boost::bimap<uint64_t, uint64_t> _evpg_ivpg_bimap;
-    boost::bimap<uint64_t, uint64_t> _espg_ispgi_bimap;
-    boost::bimap<uint64_t, uint64_t> _espg_ispgv_bimap;
-    boost::bimap<uint64_t, uint64_t> _espg_ispgp_bimap;
-
-    std::vector<_VolProp> _ivpg_to_volprop;
-    std::vector<FuncFloatToCmplx> _ispgi_to_impedance;
-    std::vector<FuncFloatToCmplx> _ispgv_to_velocity;
-    std::vector<FuncFloatToCmplx> _ispgp_to_pressure;
-
     std::string _hdf5_file_path;
-
-    std::vector<uint64_t> _vpi_to_ni;
-    std::vector<FuncFloatToCmplx> _vpi_to_volvel;
-    std::vector<uint64_t> _ppi_to_ni;
-    std::vector<FuncFloatToCmplx> _ppi_to_pressure;
-
-    // members allocated during mesh load
-    fz::SafePtr<std::array<Float, DIM>> _ni_to_xyz;
-    fz::SafePtr<std::array<uint64_t, ENIS_COUNT<O>>> _sei_to_ni;
-    fz::SafePtr<std::array<uint64_t, ENIV_COUNT<O>>> _vei_to_ni;
-    fz::SafePtr<uint64_t> _sei_to_espg;
-    fz::SafePtr<uint64_t> _vei_to_evpg;
-
-    // members allocated during the simulation run
-    fz::SafePtr<uint64_t> _isei_to_sei;
-    fz::SafePtr<uint64_t> _vsei_to_sei;
-    fz::SafePtr<uint64_t> _psei_to_sei;
-    fz::SafePtr<uint64_t> _vei_to_ivpg;
-    fz::SafePtr<uint64_t> _isei_to_ispgi;
-    fz::SafePtr<uint64_t> _vsei_to_ispgv;
-    fz::SafePtr<uint64_t> _psei_to_ispgp;
-    fz::SafePtr<std::pair<uint64_t, uint64_t>> _ni_connections;
     
-    // members used during frequency iterations
-    fz::SafePtr<Float> _fi_to_freq;
+    fz::SafePtr<const Float> _fi_to_freq;
+
+    fz::SafePtr<const std::array<Float, DIM>> _ni_to_xyz;
+
+    fz::SafePtr<const std::array<uint64_t, ENIV_COUNT<O>>> _vei_to_ni;
+    fz::SafePtr<const uint64_t> _vei_to_ivpg;
+    fz::SafePtr<const Cmplx> _ivpg_to_density;
+    fz::SafePtr<const Cmplx> _ivpg_to_soundspeed;
+
+    fz::SafePtr<const std::array<uint64_t, ENIS_COUNT<O>>> _isei_to_ni;
+    fz::SafePtr<const uint64_t> _isei_to_ispgi;
+    fz::SafePtr<const Cmplx> _ispgi_to_impedance;
+
+    fz::SafePtr<const uint64_t> _vpi_to_ni;
+    fz::SafePtr<const Cmplx> _vpi_to_volvel;
+
+    fz::SafePtr<const std::array<uint64_t, ENIS_COUNT<O>>> _vsei_to_ni;
+    fz::SafePtr<const uint64_t> _vsei_to_ispgv;
+    fz::SafePtr<const Cmplx> _ispgv_to_velocity;
+    
+    fz::SafePtr<const uint64_t> _pni_to_ni;
+    fz::SafePtr<const uint64_t> _pvi_to_pni_count;
+    fz::SafePtr<const Cmplx> _pvi_to_pressure;
+
+    fz::SafePtr<std::pair<uint64_t, uint64_t>> _ni_connections;
     fz::SafePtr<fz::SafePtr<Float>> _ivpg_to_stif_fi_part;
     fz::SafePtr<fz::SafePtr<Float>> _ivpg_to_mass_fi_part;
     fz::SafePtr<fz::SafePtr<Cmplx*>> _ivpg_to_ptr_in_a;
@@ -216,9 +137,8 @@ private:
     fz::SafePtr<Cmplx*> _vpi_to_ptr_in_b;
     fz::SafePtr<fz::SafePtr<Float>> _ispgv_to_forc_fi_part;
     fz::SafePtr<fz::SafePtr<Cmplx*>> _ispgv_to_ptr_in_b;
-    fz::SafePtr<FuncFloatToCmplx> _apvi_to_pressure;
-    fz::SafePtr<fz::SafePtr<Cmplx*>> _apvi_to_ptr_in_a;
-    fz::SafePtr<fz::SafePtr<Cmplx*>> _apvi_to_ptr_in_b;
+    fz::SafePtr<fz::SafePtr<Cmplx*>> _pvi_to_ptr_in_a;
+    fz::SafePtr<fz::SafePtr<Cmplx*>> _pvi_to_ptr_in_b;
     fz::SafePtr<Cmplx> _a_vals;
     fz::SafePtr<uint64_t> _b_row_idx;
     fz::SafePtr<Cmplx> _b_vals;
@@ -226,7 +146,6 @@ private:
 
     uint64_t _fi_count;
     uint64_t _ni_count;
-    uint64_t _sei_count;
     uint64_t _vei_count;
     uint64_t _isei_count;
     uint64_t _vsei_count;
@@ -236,15 +155,10 @@ private:
     uint64_t _ispgp_count;
     uint64_t _ispgv_count;
     uint64_t _vpi_count;
-    uint64_t _ppi_count;
-    uint64_t _apvi_count;
+    uint64_t _pni_count;
+    uint64_t _pvi_count;
 
     std::unique_ptr<indicators::ProgressBar> _progress_bar;
-
-    bool _is_freq_defined;
-    bool _is_mesh_defined;
-    bool _is_any_source_defined;
-    bool _did_run;
 
     #if NUMAV_SYSTEM_SOLVER == NUMAV_INTERNAL
         LdltSolver<Cmplx> _solver;
@@ -280,6 +194,47 @@ private:
         fz::SafePtr<Cmplx> _b_dense;
     #endif
 };
+
+template<ElementShape S, ElementOrder O>
+void simulate_fem_helmholtz(
+    // freq vector
+    const Float* const fi_to_freq,
+    const uint64_t fi_count,
+    // mesh nodes
+    const Float* const ni_to_xyz,
+    const uint64_t ni_count,
+    // volume materials
+    const uint64_t* const vei_to_ni,
+    const uint64_t* const vei_to_ivpg,
+    const uint64_t vei_count,
+    const Cmplx* const ivpg_to_density,
+    const Cmplx* const ivpg_to_soundspeed,
+    const uint64_t ivpg_count,
+    // surface materials
+    const uint64_t* const isei_to_ni,
+    const uint64_t* const isei_to_ispgi,
+    const uint64_t isei_count,
+    const Cmplx* const ispgi_to_impedance,
+    const uint64_t ispgi_count,
+    // volume velocity
+    const uint64_t* const vpi_to_ni,
+    const Cmplx* const vpi_to_volvel,
+    const uint64_t vpi_count,
+    // surface velocity
+    const uint64_t* const vsei_to_ni,
+    const uint64_t* const vsei_to_ispgv,
+    const uint64_t vsei_count,
+    const Cmplx* const ispgv_to_velocity,
+    const uint64_t ispgv_count,
+    // pressure
+    const uint64_t* const pni_to_ni,
+    const uint64_t pni_count,
+    const uint64_t* const pvi_to_pni_count,
+    const Cmplx* const pvi_to_pressure,
+    const uint64_t pvi_count,
+    // export
+    const char* const hdf5_file_path
+);
 
 // alias for simulation type
 template<ElementOrder O>

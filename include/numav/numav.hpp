@@ -19,7 +19,6 @@ namespace numav {
         return static_cast<Float>(v);
     }
     using Cmplx = typename std::complex<Float>;
-    using FuncFloatToCmplx = typename std::function<Cmplx(const Float)>;
 
     // constants
     constexpr Float PI = 3.14159265358979323846_F;

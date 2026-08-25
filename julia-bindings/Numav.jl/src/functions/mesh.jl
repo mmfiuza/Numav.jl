@@ -6,6 +6,12 @@ export load_mesh!
 
 const SimulationWithMesh = Union{SimulationFemHelmholtz}
 
+function _check_if_mesh_is_defined(s::SimulationWithMesh)
+    if s._is_mesh_defined
+        error("Mesh not defined. Call load_mesh to do so.")
+    end
+end
+
 function _load_bdf!(
     s::SimulationWithMesh,
     path_to_mesh::AbstractString,
@@ -53,6 +59,7 @@ function _load_bdf!(
 
             elseif startswith(line, "CTRIA3  ")
                 espg = parse(Int, strip(line[17:24]))
+                push!(s._existing_espg, espg)
                 s._sei_to_espg[sei] = espg
                 s._sei_to_ni[1:3, sei] = [
                     parse(Int, strip(line[25:32])),
@@ -63,6 +70,7 @@ function _load_bdf!(
 
             elseif startswith(line, "CTETRA  ")
                 evpg = parse(Int, strip(line[17:24]))
+                push!(s._existing_evpg, evpg)
                 s._vei_to_evpg[vei] = evpg
                 s._vei_to_ni[1:4, vei] = [
                     parse(Int, strip(line[25:32])),
@@ -100,7 +108,8 @@ function _generate_non_vtx_nodes!(s::SimulationFemHelmholtz)
 
             if !haskey(idxs_extra_nodes, tup)
                 is_extra_node[i, vei] = true
-                s._ni_count += 1
+                s._ni_count 
+                 1
                 s._vei_to_ni[ENIV_COUNT_LIN + i, vei] = s._ni_count
                 idxs_extra_nodes[tup] = s._ni_count
             else
@@ -163,15 +172,4 @@ function load_mesh!(
     if (_is_quadratic(s))
         _generate_non_vtx_nodes!(s)
     end
-    _cpp_load_mesh(
-        s._cpp_simulation,
-        vec(s._ni_to_xyz),
-        UInt64.(vec(s._sei_to_ni) .- 1),
-        UInt64.(vec(s._vei_to_ni) .- 1),
-        UInt64.(s._sei_to_espg),
-        UInt64.(s._vei_to_evpg),
-        UInt64(s._ni_count),
-        UInt64(s._sei_count),
-        UInt64(s._vei_count)
-    )
 end
