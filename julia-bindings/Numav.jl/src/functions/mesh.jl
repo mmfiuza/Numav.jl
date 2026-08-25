@@ -108,8 +108,7 @@ function _generate_non_vtx_nodes!(s::SimulationFemHelmholtz)
 
             if !haskey(idxs_extra_nodes, tup)
                 is_extra_node[i, vei] = true
-                s._ni_count 
-                 1
+                s._ni_count += 1
                 s._vei_to_ni[ENIV_COUNT_LIN + i, vei] = s._ni_count
                 idxs_extra_nodes[tup] = s._ni_count
             else
