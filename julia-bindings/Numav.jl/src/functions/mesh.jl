@@ -8,7 +8,7 @@ const SimulationWithMesh = Union{SimulationFemHelmholtz}
 
 function _check_if_mesh_is_defined(s::SimulationWithMesh)
     if !s._is_mesh_defined
-        error("Mesh not defined. Call load_mesh to do so.")
+        error("Mesh not defined. Call load_mesh! to do so.")
     end
 end
 
@@ -163,7 +163,7 @@ function load_mesh!(
         _load_bdf!(s, path_to_mesh)
     else
         if ext == ""
-            throw(ArgumentError("No file format on file name", ))
+            throw(ArgumentError("No file format on file name"))
         else
             throw(ArgumentError("Unrecognized file format: `$ext`"))
         end
