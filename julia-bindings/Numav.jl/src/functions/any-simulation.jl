@@ -43,13 +43,6 @@ function set_result_export_path!(
     s::Simulation,
     path_to_hdf5_file::AbstractString
 )
-    s._hdf5_file_path = path_to_hdf5_file
-end
-
-function set_result_export_path(
-    s::Simulation,
-    path_to_hdf5_file::AbstractString
-)
     _check_if_did_run(s)
     if !isempty(s._hdf5_file_path)
         error("Result export path is already defined.")
