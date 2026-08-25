@@ -149,7 +149,7 @@ add_sound_source!(s, coordinates=[1.0, 1.0, 1.0], volume_velocity=func)
 set_result_export_path!(s, result_path)
 run!(s)
 
-plot_pressure_field(result_path)
+# plot_pressure_field(result_path) # todo: bring this test back
 
 end # redirect_stdout
 

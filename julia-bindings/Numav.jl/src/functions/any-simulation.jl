@@ -265,6 +265,8 @@ end
 
 
 function run!(s::Simulation)
+    _check_if_it_can_run(s)
+
     _organize_volume_physical_group_data!(s)
     _organize_impedance_physical_group_data!(s)
     _organize_velocity_physical_group_data!(s)
@@ -317,6 +319,7 @@ function run!(s::Simulation)
         # export
         s._hdf5_file_path
     )
+    s._did_run = true
 end
 
 function _check_if_did_run(s::Simulation)

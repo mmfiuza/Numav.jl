@@ -44,6 +44,9 @@ function set_frequency!(
             "`step` and `sampling_density` passed simultaneously"
         ))
     end
+    if s._is_freq_defined
+        error("Frequency is already defined.")
+    end
     if !isnothing(max)
         min = something(min, 0)
         if !isnothing(step)

@@ -56,6 +56,11 @@ dev /usr/local/share/julia/dev/numav_julia_jll
 dev /workspace/julia-bindings/Numav.jl
 ```
 
+# Generate override for numav_julia_jll
+```
+julia julia-bindings/generate_override.jl
+```
+
 # How to build numav_julia for local testing
 ```
 rm -rf build &&

@@ -158,6 +158,9 @@ function load_mesh!(
     s::SimulationWithMesh,
     path_to_mesh::AbstractString
 )   
+    if s._is_mesh_defined
+        error("Mesh already defined")
+    end
     (_, ext) = splitext(path_to_mesh)
     if ext == ".bdf" || ext == ".nas"
         _load_bdf!(s, path_to_mesh)

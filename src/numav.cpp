@@ -54,7 +54,7 @@ void simulate_fem_helmholtz(
     
     // mesh nodes
     s._ni_to_xyz = fz::SafePtr<const std::array<Float, DIM>>::make_view(
-        reinterpret_cast<const std::array<Float,3UL>*>(ni_to_xyz), 3UL*ni_count
+        reinterpret_cast<const std::array<Float,DIM>*>(ni_to_xyz), DIM*ni_count
     );
     s._ni_count = ni_count;
 
