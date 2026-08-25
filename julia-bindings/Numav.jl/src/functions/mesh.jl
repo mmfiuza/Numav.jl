@@ -7,7 +7,7 @@ export load_mesh!
 const SimulationWithMesh = Union{SimulationFemHelmholtz}
 
 function _check_if_mesh_is_defined(s::SimulationWithMesh)
-    if s._is_mesh_defined
+    if !s._is_mesh_defined
         error("Mesh not defined. Call load_mesh to do so.")
     end
 end
@@ -172,4 +172,5 @@ function load_mesh!(
     if (_is_quadratic(s))
         _generate_non_vtx_nodes!(s)
     end
+    s._is_mesh_defined = true
 end
