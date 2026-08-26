@@ -71,6 +71,7 @@ public:
     Simulation(Simulation&&) noexcept;
     Simulation& operator=(Simulation&&) noexcept;
 
+    void _write_simulation_inputs_to_hdf5_file();
     void _allocate_a();
     void _allocate_b();
     void _allocate_x();

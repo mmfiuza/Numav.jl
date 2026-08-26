@@ -19,6 +19,8 @@ void SimulationFemHelmTet<O>::_solve_systems()
 {
     H5::DataSet pressure_data_set = _begin_hdf5_file();
 
+    _write_simulation_inputs_to_hdf5_file();
+
     _clear_data_not_used_in_freq_iterations();
 
     log::print_start_time();
