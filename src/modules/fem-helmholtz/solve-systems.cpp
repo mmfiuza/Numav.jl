@@ -52,14 +52,14 @@ void SimulationFemHelmTet<O>::_solve_systems()
         // add point volume velocity to b vector
         for (uint64_t vpi = 0UL; vpi != _vpi_count; ++vpi) {
             const Cmplx volvel = _vpi_to_volvel[fi*_vpi_count + vpi];
-            *_vpi_to_ptr_in_b[vpi] += Cmplx(0_F, -omega) * volvel;
+            *_vpi_to_ptr_in_b[vpi] += Cmplx(0_F, omega) * volvel;
         }
 
         // add surface velocity to b vector
         for (uint64_t ispgv = 0UL; ispgv != _ispgv_count; ++ispgv)
         {
             const Cmplx velocity = _ispgv_to_velocity[fi*_ispgv_count + ispgv];
-            const Cmplx fd_part = Cmplx(0_F, -omega) * velocity;
+            const Cmplx fd_part = Cmplx(0_F, omega) * velocity;
             const uint64_t fipi_count = _ispgv_to_ptr_in_b[ispgv].size();
             for (uint64_t fipi = 0UL; fipi != fipi_count; ++fipi) {
                 *_ispgv_to_ptr_in_b[ispgv][fipi] +=
