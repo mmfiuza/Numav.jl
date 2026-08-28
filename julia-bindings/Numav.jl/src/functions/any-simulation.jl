@@ -168,7 +168,6 @@ function _organize_pressure_physical_group_data!(s::SimulationFemHelmholtz)
     s._pvi_to_pressure_func = Vector{Function}(undef, s._pvi_count)
     s._pvi_to_pni_count = Vector{Int}(undef, s._pvi_count)
 
-    all_ni = Set{Int}()
     pvi = 0
     for r in sorted_roots
         pvi += 1
@@ -187,16 +186,14 @@ function _organize_pressure_physical_group_data!(s::SimulationFemHelmholtz)
         end
 
         n_funcs = length(funcs)
-        s._pvi_to_pressure_func[pvi] = (args...; kwargs...) ->
-            sum(f(args...; kwargs...) for f in funcs) / n_funcs
+        s._pvi_to_pressure_func[pvi] = (freq) ->
+            sum(f(freq) for f in funcs) / n_funcs
 
         s._pvi_to_pni_count[pvi] = length(group_ni)
-        union!(all_ni, group_ni)
-    end
 
-    sorted_ni = sort(collect(all_ni))
-    s._pni_count = length(sorted_ni)
-    s._pni_to_ni = sorted_ni
+        append!(s._pni_to_ni, sort(collect(group_ni)))
+    end
+    s._pni_count = length(s._pni_to_ni)
 
     return nothing
 end

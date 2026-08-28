@@ -652,13 +652,14 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_pressure()
     // define _pvi_to_ptr_in_a and _pvi_to_ptr_in_b
     _pvi_to_ptr_in_a = fz::SafePtr<fz::SafePtr<Cmplx*>>(_pvi_count);
     _pvi_to_ptr_in_b = fz::SafePtr<fz::SafePtr<Cmplx*>>(_pvi_count);
+    uint64_t pni = 0UL;
     for (uint64_t pvi = 0UL; pvi != _pvi_count; ++pvi) {
         const uint64_t pni_count = _pvi_to_pni_count[pvi];
         _pvi_to_ptr_in_a[pvi] = fz::SafePtr<Cmplx*>(pni_count);
         _pvi_to_ptr_in_b[pvi] = fz::SafePtr<Cmplx*>(pni_count);
-        uint64_t pni = 0UL;
         for (uint64_t fipi = 0UL; fipi != pni_count; ++fipi) {
             const uint64_t ni = _pni_to_ni[pni];
+            ++pni;
 
             // _pvi_to_ptr_in_a
             #if NUMAV_SYSTEM_SOLVER == NUMAV_INTERNAL
@@ -683,8 +684,6 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_pressure()
             );
             const uint64_t ptrdiff_b = ni_ptr - _b_row_idx.begin();
             _pvi_to_ptr_in_b[pvi][fipi] = _b_vals.begin() + ptrdiff_b;
-            
-            ++pni;
         }
     }
 }
