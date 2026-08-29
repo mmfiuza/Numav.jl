@@ -90,23 +90,23 @@ void SimulationFemHelmTet<O>::_write_simulation_inputs_to_hdf5_file(
     H5DSset_label(dataset_freq.getId(), 0UL, "frequency_index");
     H5DSset_scale(dataset_freq.getId(), "simulated_frequencies");
 
-    // // mesh
-    // H5::Group mesh_grp = inputs_grp.createGroup("mesh");
-    // {   // nodes
-    //     H5::DataSet dataset = write_dataset_float64_2d(
-    //         mesh_grp,
-    //         "nodes",
-    //         static_cast_contiguous_data<double>(
-    //             _ni_to_xyz.data()->data(),
-    //             _ni_count * 3UL
-    //         ).get(),
-    //         _ni_count,
-    //         3UL
-    //     );
-    //     write_string_attr(dataset, "units", "m");
-    //     H5DSset_label(dataset.getId(), 0UL, "node_index");
-    //     H5DSset_label(dataset.getId(), 1UL, "coordinates");
-    // }
+    // mesh
+    H5::Group mesh_grp = inputs_grp.createGroup("mesh");
+    {   // nodes
+        H5::DataSet dataset = write_dataset_float64_2d(
+            mesh_grp,
+            "nodes",
+            static_cast_contiguous_data<double>(
+                _ni_to_xyz.data()->data(),
+                _ni_count * 3UL
+            ).get(),
+            _ni_count,
+            3UL
+        );
+        write_string_attr(dataset, "units", "m");
+        H5DSset_label(dataset.getId(), 0UL, "node_index");
+        H5DSset_label(dataset.getId(), 1UL, "coordinates");
+    }
     // {   // surface_elements
     //     H5::DataSet dataset = write_dataset_uint64_2d(
     //         mesh_grp,
