@@ -1,6 +1,6 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
-@test begin
+@testset "general" begin
 
 using Numav
 
@@ -153,7 +153,5 @@ run!(s)
 
 end # redirect_stdout
 
-return true # Passed if code reaches here
-
-end # @test
+end # @testset
 

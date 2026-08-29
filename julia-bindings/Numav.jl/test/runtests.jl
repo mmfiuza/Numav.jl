@@ -3,5 +3,6 @@
 using Test
 
 @testset "Numav.jl" begin
-    include("test1.jl")
+    include("accuracy.jl")
+    include("general.jl")
 end
