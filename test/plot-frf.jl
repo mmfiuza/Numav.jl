@@ -2,8 +2,8 @@
 
 using HDF5
 
-file_1 = h5open("result.h5")
-file_2 = h5open("result.h5")
+file_1 = h5open("accuracy-test-old.h5")
+file_2 = h5open("accuracy-test.h5")
 
 pressure_1 = file_1["/results/pressure"][:,:]
 pressure_2 = file_2["/results/pressure"][:,:]
@@ -38,11 +38,11 @@ Plots.plot(
     size = (600, 400),
 )
 Plots.plot!(
-    vec(freq_1), vec(spl_1[370,:]),
+    vec(freq_1), vec(spl_1[40,:]),
     label = "1"
 )
 Plots.plot!(
-    vec(freq_2), vec(spl_2[370,:]),
+    vec(freq_2), vec(spl_2[40,:]),
     label = "2",
     linestyle = :dash
 )

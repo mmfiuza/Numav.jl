@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
 lib_name = "numav_julia_jll"
-override_path = "/workspace/julia-bindings/override"
+override_path = "/workspace/c++/override"
 depot_path = Base.DEPOT_PATH[1]
 jll_path = "$(depot_path)/dev/$(lib_name)"
 

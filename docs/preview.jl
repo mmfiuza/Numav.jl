@@ -2,4 +2,4 @@
 
 import LiveServer
 
-LiveServer.serve(dir="/workspace/julia-bindings/Numav.jl/docs/build")
+LiveServer.serve(dir="/workspace/docs/build")
