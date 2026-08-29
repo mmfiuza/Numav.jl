@@ -128,55 +128,33 @@ function _organize_pressure_physical_group_data!(s::SimulationFemHelmholtz)
         push!(ni_sets, Set{Int}(ni))
     end
 
-    n_sets = length(ni_sets)   # == s._ispgp_count + s._ppi_count
-
-    # --- union-find over the sets: connect any two sets that share a NI ---
-    parent = collect(1:n_sets)
-    function uf_find(x::Int)
-        while parent[x] != x
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        end
-        return x
-    end
-    function uf_union!(x::Int, y::Int)
-        rx, ry = uf_find(x), uf_find(y)
-        rx != ry && (parent[ry] = rx)
-    end
-
     ni_to_set_idxs = Dict{Int,Vector{Int}}()
     for (idx, set) in enumerate(ni_sets)
         for ni in set
             push!(get!(ni_to_set_idxs, ni, Int[]), idx)
         end
     end
-    for (_, idxs) in ni_to_set_idxs
-        for i in 2:length(idxs)
-            uf_union!(idxs[1], idxs[i])
-        end
-    end
 
-    # group set indices by connected component (root); deterministic ordering
-    groups = Dict{Int,Vector{Int}}()
-    for idx in 1:n_sets
-        r = uf_find(idx)
-        push!(get!(groups, r, Int[]), idx)
+    # group nis by their exact "membership signature" (which sets contain them)
+    signature_to_ni = Dict{Vector{Int},Vector{Int}}()
+    for (ni, idxs) in ni_to_set_idxs
+        sig = sort(idxs)
+        push!(get!(signature_to_ni, sig, Int[]), ni)
     end
-    sorted_roots = sort(collect(keys(groups)); by = r -> minimum(groups[r]))
+    sorted_sigs = sort(collect(keys(signature_to_ni)))
 
-    s._pvi_count = length(sorted_roots)
+    s._pvi_count = length(sorted_sigs)
     s._pvi_to_pressure_func = Vector{Function}(undef, s._pvi_count)
     s._pvi_to_pni_count = Vector{Int}(undef, s._pvi_count)
+    s._pni_to_ni = Int[]
 
     pvi = 0
-    for r in sorted_roots
+    for sig in sorted_sigs
         pvi += 1
-        idxs = groups[r]
+        nis = signature_to_ni[sig]
 
         funcs::Vector{Function} = Function[]
-        group_ni = Set{Int}()
-        for idx in idxs
-            union!(group_ni, ni_sets[idx])
+        for idx in sig
             if idx <= s._ispgp_count
                 push!(funcs, s._ispgp_to_pressure_func[idx])
             else
@@ -189,9 +167,9 @@ function _organize_pressure_physical_group_data!(s::SimulationFemHelmholtz)
         s._pvi_to_pressure_func[pvi] = (freq) ->
             sum(f(freq) for f in funcs) / n_funcs
 
-        s._pvi_to_pni_count[pvi] = length(group_ni)
+        s._pvi_to_pni_count[pvi] = length(nis)
 
-        append!(s._pni_to_ni, sort(collect(group_ni)))
+        append!(s._pni_to_ni, sort(nis))
     end
     s._pni_count = length(s._pni_to_ni)
 
