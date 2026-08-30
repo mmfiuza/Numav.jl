@@ -86,7 +86,7 @@ void SimulationFemHelmTet<O>::_solve_systems()
             const Cmplx soundspeed = _ivpg_to_soundspeed[fi*_ivpg_count + ivpg];
             const Cmplx stif_fd_part = Cmplx(1_F, 0_F) / density;
             const Cmplx mass_fd_part =
-                - omega_squared / (density * soundspeed * soundspeed);
+                omega_squared / (density * soundspeed * soundspeed);
             
             const uint64_t fipi_count = _ivpg_to_ptr_in_a[ivpg].size();
             for (uint64_t fipi = 0UL; fipi != fipi_count; ++fipi) {

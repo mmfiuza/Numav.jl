@@ -314,7 +314,7 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_vol_elements()
                 nnt_detj_w = nnt * detj * GAUSS_WEIGHTS_VOL<NGP_MASS<O>>[gpi];
                 
                 for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci) {
-                    _ivpg_to_mass_fi_part[ivpg][fipi_vol[nci]] +=
+                    _ivpg_to_mass_fi_part[ivpg][fipi_vol[nci]] -=
                         nnt_detj_w(ENI_PAIRS[nci][0UL], ENI_PAIRS[nci][1UL]);
                 }
             }
@@ -325,7 +325,7 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_vol_elements()
             mass_fi_part *= tet_volume;
             
             for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci) {
-                _ivpg_to_mass_fi_part[ivpg][fipi_vol[nci]] +=
+                _ivpg_to_mass_fi_part[ivpg][fipi_vol[nci]] -=
                     mass_fi_part(ENI_PAIRS[nci][0UL], ENI_PAIRS[nci][1UL]);
             }
         #endif
