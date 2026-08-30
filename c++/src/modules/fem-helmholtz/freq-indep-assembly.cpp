@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
 #include "numav/numav.hpp"
+#include "modules/fem-helmholtz/fem-helmholtz.hpp"
 
 #include "common/exception.hpp"
 #include "common/maths.hpp"
@@ -10,7 +11,7 @@
 #include "modules/fem-helmholtz/analytic-integration.hpp"
 #include "modules/fem-helmholtz/gauss-quadrature.hpp"
 
-#include <set>
+#include <unordered_set>
 
 namespace numav {
 
@@ -57,19 +58,19 @@ std::pair<T,T> make_ordered_rowcol_pair(const T a, const T b)
     }
 }
 
-template <ElementOrder O>
-void SimulationFemHelmTet<O>::_allocate_a()
+template <ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_allocate_a()
 {
     #if NUMAV_SYSTEM_SOLVER == NUMAV_EIGEN
         constexpr std::array<
             std::array<uint64_t, 2UL>,
-            PERMUTATION_REP_SIZE<ENIV_COUNT<O>, 2UL>
-        > ENI_PAIRS = PERMUTATION_REP<ENIV_COUNT<O>>;
+            PERMUTATION_REP_SIZE<ENIV_COUNT<S,O>, 2UL>
+        > ENI_PAIRS = PERMUTATION_REP<ENIV_COUNT<S,O>>;
     #else
         constexpr std::array<
             std::array<uint64_t, 2UL>,
-            COMBINATION_REP_SIZE<ENIV_COUNT<O>, 2UL>
-        > ENI_PAIRS = COMBINATION_REP<ENIV_COUNT<O>>;
+            COMBINATION_REP_SIZE<ENIV_COUNT<S,O>, 2UL>
+        > ENI_PAIRS = COMBINATION_REP<ENIV_COUNT<S,O>>;
     #endif
     std::unordered_set<std::pair<uint64_t,uint64_t>> existing_pairs;
     for (uint64_t vei = 0UL; vei != _vei_count; ++vei) {
@@ -103,12 +104,12 @@ void SimulationFemHelmTet<O>::_allocate_a()
     #endif
 }
 
-template <ElementOrder O>
-void SimulationFemHelmTet<O>::_allocate_b()
+template <ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_allocate_b()
 {
     std::unordered_set<uint64_t> existing_source_nodes;
     for (uint64_t vsei = 0UL; vsei != _vsei_count; ++vsei) {
-        for (uint64_t enis = 0UL; enis != ENIS_COUNT<O>; ++enis) {
+        for (uint64_t enis = 0UL; enis != ENIS_COUNT<S,O>; ++enis) {
             const uint64_t ni = _vsei_to_ni[vsei][enis];
             existing_source_nodes.insert(ni);
         }
@@ -129,25 +130,25 @@ void SimulationFemHelmTet<O>::_allocate_b()
     _b_vals = fz::SafePtr<Cmplx>(_b_row_idx.size());
 }
 
-template <ElementOrder O>
-void SimulationFemHelmTet<O>::_allocate_x()
+template <ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_allocate_x()
 {
     _x = fz::SafePtr<Cmplx>(_ni_count);
 }
 
-template<ElementOrder O>
-void SimulationFemHelmTet<O>::_assemble_fi_part_for_vol_elements()
+template<ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_vol_elements()
 {
     #if NUMAV_SYSTEM_SOLVER == NUMAV_EIGEN
         constexpr std::array<
             std::array<uint64_t, 2UL>,
-            PERMUTATION_REP_SIZE<ENIV_COUNT<O>, 2UL>
-        > ENI_PAIRS = PERMUTATION_REP<ENIV_COUNT<O>>;
+            PERMUTATION_REP_SIZE<ENIV_COUNT<S,O>, 2UL>
+        > ENI_PAIRS = PERMUTATION_REP<ENIV_COUNT<S,O>>;
     #else
         constexpr std::array<
             std::array<uint64_t, 2UL>,
-            COMBINATION_REP_SIZE<ENIV_COUNT<O>, 2UL>
-        > ENI_PAIRS = COMBINATION_REP<ENIV_COUNT<O>>;
+            COMBINATION_REP_SIZE<ENIV_COUNT<S,O>, 2UL>
+        > ENI_PAIRS = COMBINATION_REP<ENIV_COUNT<S,O>>;
     #endif
 
     // count the fipi for each ivpg
@@ -218,8 +219,8 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_vol_elements()
         }
         
         // coordinates matrix
-        Eigen::Matrix<Float,DIM,ENIV_COUNT<O>> coords_matrix;
-        for (uint64_t eni = 0UL; eni != ENIV_COUNT<O>; ++eni) {
+        Eigen::Matrix<Float,DIM,ENIV_COUNT<S,O>> coords_matrix;
+        for (uint64_t eni = 0UL; eni != ENIV_COUNT<S,O>; ++eni) {
             const uint64_t ni = _vei_to_ni[vei][eni];
             for (uint64_t di = 0UL; di != DIM; ++di) {
                 coords_matrix(di,eni) = _ni_to_xyz[ni][di];
@@ -237,12 +238,12 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_vol_elements()
 
         // stiffness matrix
         #if NUMAV_STIF_INTEGRATION_METHOD == NUMAV_GAUSS_QUADRATURE
-            constexpr std::array<std::array<Float,DIM>,NGP_STIF<O>>
-                GAUSS_POINTS_STIF = GAUSS_POINTS_VOL<NGP_STIF<O>>;
-            for (uint64_t gpi = 0UL; gpi != NGP_STIF<O>; ++gpi)
+            constexpr std::array<std::array<Float,DIM>,NGP_STIF<S,O>>
+                GAUSS_POINTS_STIF = GAUSS_POINTS_VOL<NGP_STIF<S,O>>;
+            for (uint64_t gpi = 0UL; gpi != NGP_STIF<S,O>; ++gpi)
             {
-                const Eigen::Matrix<Float,ENIV_COUNT<O>,DIM> nabla_n =
-                    shape_func_vol_gradient<O>(
+                const Eigen::Matrix<Float,ENIV_COUNT<S,O>,DIM> nabla_n =
+                    shape_func_vol_gradient<S,O>(
                         GAUSS_POINTS_STIF[gpi][0UL],
                         GAUSS_POINTS_STIF[gpi][1UL],
                         GAUSS_POINTS_STIF[gpi][2UL]
@@ -256,14 +257,14 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_vol_elements()
                 const Eigen::Matrix<Float,DIM,DIM> inv_jac =
                     jac_matrix.inverse();
                 
-                const Eigen::Matrix<Float,ENIV_COUNT<O>,DIM> b_matrix =
+                const Eigen::Matrix<Float,ENIV_COUNT<S,O>,DIM> b_matrix =
                     nabla_n * inv_jac;
                 
-                Eigen::Matrix<Float,ENIV_COUNT<O>,ENIV_COUNT<O>> bbt =
+                Eigen::Matrix<Float,ENIV_COUNT<S,O>,ENIV_COUNT<S,O>> bbt =
                     b_matrix * b_matrix.transpose();
                 
                 auto& bbt_detj_w = bbt;
-                bbt_detj_w = bbt * detj * GAUSS_WEIGHTS_VOL<NGP_STIF<O>>[gpi];
+                bbt_detj_w = bbt * detj * GAUSS_WEIGHTS_VOL<NGP_STIF<S,O>>[gpi];
 
                 for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci) {
                     _ivpg_to_stif_fi_part[ivpg][fipi_vol[nci]] +=
@@ -271,8 +272,8 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_vol_elements()
                 }
             }
         #elif NUMAV_STIF_INTEGRATION_METHOD == NUMAV_ANALYTIC
-            Eigen::Matrix<Float, ENIV_COUNT<O>, ENIV_COUNT<O>> stif_fi_part = 
-                get_stif_matrix_const_part<O>(coords_matrix);
+            Eigen::Matrix<Float, ENIV_COUNT<S,O>, ENIV_COUNT<S,O>> stif_fi_part = 
+                get_stif_matrix_const_part<S,O>(coords_matrix);
 
             stif_fi_part /= tet_volume;
 
@@ -284,12 +285,12 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_vol_elements()
 
         // mass matrix
         #if NUMAV_MASS_INTEGRATION_METHOD == NUMAV_GAUSS_QUADRATURE
-            constexpr std::array<std::array<Float,DIM>,NGP_MASS<O>>
-                GAUSS_POINTS_MASS = GAUSS_POINTS_VOL<NGP_MASS<O>>;
-            for (uint64_t gpi = 0UL; gpi != NGP_MASS<O>; ++gpi)
+            constexpr std::array<std::array<Float,DIM>,NGP_MASS<S,O>>
+                GAUSS_POINTS_MASS = GAUSS_POINTS_VOL<NGP_MASS<S,O>>;
+            for (uint64_t gpi = 0UL; gpi != NGP_MASS<S,O>; ++gpi)
             {
-                const Eigen::Matrix<Float,ENIV_COUNT<O>,DIM> nabla_n =
-                    shape_func_vol_gradient<O>(
+                const Eigen::Matrix<Float,ENIV_COUNT<S,O>,DIM> nabla_n =
+                    shape_func_vol_gradient<S,O>(
                         GAUSS_POINTS_MASS[gpi][0UL],
                         GAUSS_POINTS_MASS[gpi][1UL],
                         GAUSS_POINTS_MASS[gpi][2UL]
@@ -300,18 +301,18 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_vol_elements()
                 
                 const Float detj = std::abs(jac_matrix.determinant());
                     
-                const Eigen::Matrix<Float,ENIV_COUNT<O>,1UL> n =
-                    shape_func_vol<O>(
+                const Eigen::Matrix<Float,ENIV_COUNT<S,O>,1UL> n =
+                    shape_func_vol<S,O>(
                         GAUSS_POINTS_MASS[gpi][0UL],
                         GAUSS_POINTS_MASS[gpi][1UL],
                         GAUSS_POINTS_MASS[gpi][2UL]
                     );
                     
-                Eigen::Matrix<Float,ENIV_COUNT<O>,ENIV_COUNT<O>> nnt =
+                Eigen::Matrix<Float,ENIV_COUNT<S,O>,ENIV_COUNT<S,O>> nnt =
                     n * n.transpose();
                     
                 auto& nnt_detj_w = nnt; 
-                nnt_detj_w = nnt * detj * GAUSS_WEIGHTS_VOL<NGP_MASS<O>>[gpi];
+                nnt_detj_w = nnt * detj * GAUSS_WEIGHTS_VOL<NGP_MASS<S,O>>[gpi];
                 
                 for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci) {
                     _ivpg_to_mass_fi_part[ivpg][fipi_vol[nci]] -=
@@ -319,8 +320,8 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_vol_elements()
                 }
             }
         #elif NUMAV_MASS_INTEGRATION_METHOD == NUMAV_ANALYTIC
-            Eigen::Matrix<Float,ENIV_COUNT<O>,ENIV_COUNT<O>> mass_fi_part =
-                MASS_MATRIX_CONST_PART<O>;
+            Eigen::Matrix<Float,ENIV_COUNT<S,O>,ENIV_COUNT<S,O>> mass_fi_part =
+                MASS_MATRIX_CONST_PART<S,O>;
             
             mass_fi_part *= tet_volume;
             
@@ -333,12 +334,12 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_vol_elements()
     ivpg_to_map_to_fipi.free();
 }
 
-template<ElementOrder O>
-std::array<std::array<Float,2UL>,ENIS_COUNT<O>> project_triangle_to_2d(
-    const std::array<std::array<Float,DIM>,ENIS_COUNT<O>> vertices_3d
+template<ElementShape S, ElementOrder O>
+std::array<std::array<Float,2UL>,ENIS_COUNT<S,O>> project_triangle_to_2d(
+    const std::array<std::array<Float,DIM>,ENIS_COUNT<S,O>> vertices_3d
 ) {
-    std::array<Eigen::Vector3d, ENIS_COUNT<O>> point_minus_origin;
-    for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni) {
+    std::array<Eigen::Vector3d, ENIS_COUNT<S,O>> point_minus_origin;
+    for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
         point_minus_origin[eni] = Eigen::Vector3d(
             vertices_3d[eni][0UL] - vertices_3d[0UL][0UL],
             vertices_3d[eni][1UL] - vertices_3d[0UL][1UL],
@@ -352,8 +353,8 @@ std::array<std::array<Float,2UL>,ENIS_COUNT<O>> project_triangle_to_2d(
     Eigen::Vector3d y = n.cross(u);
     y /= y.norm();
 
-    std::array<std::array<Float,2UL>,ENIS_COUNT<O>> vertices_2d;
-    for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni) {
+    std::array<std::array<Float,2UL>,ENIS_COUNT<S,O>> vertices_2d;
+    for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
         vertices_2d[eni] = std::array<Float,2UL>({
             point_minus_origin[eni].dot(x), point_minus_origin[eni].dot(y)
         });
@@ -361,19 +362,19 @@ std::array<std::array<Float,2UL>,ENIS_COUNT<O>> project_triangle_to_2d(
     return vertices_2d;
 }
 
-template<ElementOrder O>
-void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_impedance()
+template<ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_impedance()
 {
     #if NUMAV_SYSTEM_SOLVER == NUMAV_EIGEN
         constexpr std::array<
             std::array<uint64_t, 2UL>,
-            PERMUTATION_REP_SIZE<ENIS_COUNT<O>, 2UL>
-        > ENI_PAIRS = PERMUTATION_REP<ENIS_COUNT<O>>;
+            PERMUTATION_REP_SIZE<ENIS_COUNT<S,O>, 2UL>
+        > ENI_PAIRS = PERMUTATION_REP<ENIS_COUNT<S,O>>;
     #else
         constexpr std::array<
             std::array<uint64_t, 2UL>,
-            COMBINATION_REP_SIZE<ENIS_COUNT<O>, 2UL>
-        > ENI_PAIRS = COMBINATION_REP<ENIS_COUNT<O>>;
+            COMBINATION_REP_SIZE<ENIS_COUNT<S,O>, 2UL>
+        > ENI_PAIRS = COMBINATION_REP<ENIS_COUNT<S,O>>;
     #endif
 
     // count the fipi for each ispgi
@@ -443,26 +444,26 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_impedance()
 
         // damping matrix
         #if NUMAV_DAMP_INTEGRATION_METHOD == NUMAV_GAUSS_QUADRATURE
-            std::array<std::array<Float,DIM>, ENIS_COUNT<O>> triangle_3d;
-            for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni) {
+            std::array<std::array<Float,DIM>, ENIS_COUNT<S,O>> triangle_3d;
+            for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
                 const uint64_t ni = _sei_to_ni[sei][eni];
                 triangle_3d[eni] = _ni_to_xyz[ni];
             }
-            std::array<std::array<Float,2UL>,ENIS_COUNT<O>> triangle_2d =
-                project_triangle_to_2d<O>(triangle_3d);
+            std::array<std::array<Float,2UL>,ENIS_COUNT<S,O>> triangle_2d =
+                project_triangle_to_2d<S,O>(triangle_3d);
 
-            Eigen::Matrix<Float, 2UL, ENIS_COUNT<O>> coords_matrix;
-            for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni) {
+            Eigen::Matrix<Float, 2UL, ENIS_COUNT<S,O>> coords_matrix;
+            for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
                 coords_matrix(0UL,eni) = triangle_2d[eni][0UL];
                 coords_matrix(1UL,eni) = triangle_2d[eni][1UL];
             }
 
-            constexpr std::array<std::array<Float,2UL>,NGP_DAMP<O>>
-                GAUSS_POINTS_DAMP = GAUSS_POINTS_SFC<NGP_DAMP<O>>;
-            for (uint64_t gpi = 0UL; gpi != NGP_DAMP<O>; ++gpi)
+            constexpr std::array<std::array<Float,2UL>,NGP_DAMP<S,O>>
+                GAUSS_POINTS_DAMP = GAUSS_POINTS_SFC<NGP_DAMP<S,O>>;
+            for (uint64_t gpi = 0UL; gpi != NGP_DAMP<S,O>; ++gpi)
             {
-                const Eigen::Matrix<Float,ENIS_COUNT<O>,2UL> nabla_n =
-                    shape_func_sfc_gradient<O>(
+                const Eigen::Matrix<Float,ENIS_COUNT<S,O>,2UL> nabla_n =
+                    shape_func_sfc_gradient<S,O>(
                         GAUSS_POINTS_DAMP[gpi][0UL],
                         GAUSS_POINTS_DAMP[gpi][1UL]
                     );
@@ -472,17 +473,17 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_impedance()
                 
                 const Float detj = std::abs(jac_matrix.determinant());
                 
-                const Eigen::Matrix<Float,ENIS_COUNT<O>,1UL> n =
-                    shape_func_sfc<O>(
+                const Eigen::Matrix<Float,ENIS_COUNT<S,O>,1UL> n =
+                    shape_func_sfc<S,O>(
                         GAUSS_POINTS_DAMP[gpi][0UL],
                         GAUSS_POINTS_DAMP[gpi][1UL]
                     );
                 
-                Eigen::Matrix<Float,ENIS_COUNT<O>,ENIS_COUNT<O>> nnt =
+                Eigen::Matrix<Float,ENIS_COUNT<S,O>,ENIS_COUNT<S,O>> nnt =
                     n * n.transpose();
                                 
                 auto& nnt_detj_w = nnt;
-                nnt_detj_w = nnt * detj * GAUSS_WEIGHTS_SFC<NGP_DAMP<O>>[gpi];
+                nnt_detj_w = nnt * detj * GAUSS_WEIGHTS_SFC<NGP_DAMP<S,O>>[gpi];
                 
                 for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci) {
                     _ispgi_to_damp_fi_part[ispgi][fipi_damp[nci]] += 
@@ -497,8 +498,8 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_impedance()
             }
             const Float triangle_area = get_triangle_area(vertex_coords);
 
-            Eigen::Matrix<Float,ENIS_COUNT<O>,ENIS_COUNT<O>> damp_fi_part =
-                DAMP_MATRIX_CONST_PART<O>;
+            Eigen::Matrix<Float,ENIS_COUNT<S,O>,ENIS_COUNT<S,O>> damp_fi_part =
+                DAMP_MATRIX_CONST_PART<S,O>;
             
             damp_fi_part *= triangle_area;
             
@@ -513,8 +514,8 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_impedance()
     ispgi_to_map_to_fipi.free();
 }
 
-template<ElementOrder O>
-void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_velocity()
+template<ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_velocity()
 {
     // count the fipi for each ispgv
     fz::SafePtr<std::unordered_map<uint64_t,uint64_t>> ispgv_to_map_to_fipi(
@@ -522,7 +523,7 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_velocity()
     );
     for (uint64_t vsei = 0UL; vsei != _vsei_count; ++vsei) {
         const uint64_t ispgv = _vsei_to_ispgv[vsei];
-        for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni) {
+        for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
             const uint64_t ni = _vsei_to_ni[vsei][eni];
             if (!(ispgv_to_map_to_fipi[ispgv].count(ni) > 0)) {
                 const uint64_t fipi = ispgv_to_map_to_fipi[ispgv].size();
@@ -543,13 +544,13 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_velocity()
     }
 
     // assemble elemental force vectors
-    std::array<uint64_t, ENIS_COUNT<O>> fipi_forc;
+    std::array<uint64_t, ENIS_COUNT<S,O>> fipi_forc;
     for (uint64_t vsei = 0UL; vsei != _vsei_count; ++vsei)
     {
         const uint64_t ispgv = _vsei_to_ispgv[vsei];
 
         // Create _ispgv_to_ptr_in_b
-        for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni)
+        for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni)
         {
             const uint64_t ni = _vsei_to_ni[vsei][eni];
             fipi_forc[eni] = ispgv_to_map_to_fipi[ispgv].at(ni);
@@ -564,26 +565,26 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_velocity()
 
         // elemental force vector
         #if NUMAV_FORC_INTEGRATION_METHOD == NUMAV_GAUSS_QUADRATURE
-            std::array<std::array<Float,DIM>, ENIS_COUNT<O>> triangle_3d;
-            for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni) {
+            std::array<std::array<Float,DIM>, ENIS_COUNT<S,O>> triangle_3d;
+            for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
                 const uint64_t ni = _sei_to_ni[sei][eni];
                 triangle_3d[eni] = _ni_to_xyz[ni];
             }
-            std::array<std::array<Float,2UL>,ENIS_COUNT<O>> triangle_2d =
-                project_triangle_to_2d<O>(triangle_3d);
+            std::array<std::array<Float,2UL>,ENIS_COUNT<S,O>> triangle_2d =
+                project_triangle_to_2d<S,O>(triangle_3d);
 
-            Eigen::Matrix<Float, 2UL, ENIS_COUNT<O>> coords_matrix;
-            for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni) {
+            Eigen::Matrix<Float, 2UL, ENIS_COUNT<S,O>> coords_matrix;
+            for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
                 coords_matrix(0UL,eni) = triangle_2d[eni][0UL];
                 coords_matrix(1UL,eni) = triangle_2d[eni][1UL];
             }
 
-            constexpr std::array<std::array<Float,2UL>,NGP_FORC<O>>
-                GAUSS_POINTS_FORC = GAUSS_POINTS_SFC<NGP_FORC<O>>;
-            for (uint64_t gpi = 0UL; gpi != NGP_FORC<O>; ++gpi)
+            constexpr std::array<std::array<Float,2UL>,NGP_FORC<S,O>>
+                GAUSS_POINTS_FORC = GAUSS_POINTS_SFC<NGP_FORC<S,O>>;
+            for (uint64_t gpi = 0UL; gpi != NGP_FORC<S,O>; ++gpi)
             {
-                const Eigen::Matrix<Float,ENIS_COUNT<O>, 2UL> nabla_n =
-                    shape_func_sfc_gradient<O>(
+                const Eigen::Matrix<Float,ENIS_COUNT<S,O>, 2UL> nabla_n =
+                    shape_func_sfc_gradient<S,O>(
                         GAUSS_POINTS_FORC[gpi][0UL],
                         GAUSS_POINTS_FORC[gpi][1UL]
                     );
@@ -593,16 +594,16 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_velocity()
                 
                 const Float detj = std::abs(jac_matrix.determinant());
 
-                Eigen::Matrix<Float,ENIS_COUNT<O>,1UL> n =
-                    shape_func_sfc<O>(
+                Eigen::Matrix<Float,ENIS_COUNT<S,O>,1UL> n =
+                    shape_func_sfc<S,O>(
                         GAUSS_POINTS_FORC[gpi][0UL],
                         GAUSS_POINTS_FORC[gpi][1UL]
                     );
 
                 auto& n_detj_w = n;
-                n_detj_w = n * detj * GAUSS_WEIGHTS_SFC<NGP_FORC<O>>[gpi];
+                n_detj_w = n * detj * GAUSS_WEIGHTS_SFC<NGP_FORC<S,O>>[gpi];
                 
-                for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni) {
+                for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
                     _ispgv_to_forc_fi_part[ispgv][fipi_forc[eni]] +=
                         n_detj_w(eni);
                 }
@@ -615,12 +616,12 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_velocity()
             }
             const Float triangle_area = get_triangle_area(vertex_coords);
 
-            Eigen::Matrix<Float,ENIS_COUNT<O>,1UL> forc_fi_part =
-                FORC_VECTOR_CONST_PART<O>;
+            Eigen::Matrix<Float,ENIS_COUNT<S,O>,1UL> forc_fi_part =
+                FORC_VECTOR_CONST_PART<S,O>;
             
             forc_fi_part *= triangle_area;
             
-            for (uint64_t eni = 0UL; eni != ENIS_COUNT<O>; ++eni) {
+            for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
                 _ispgv_to_forc_fi_part[ispgv][fipi_forc[eni]] +=
                     forc_fi_part(eni);
             }
@@ -631,8 +632,8 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_sfc_velocity()
     ispgv_to_map_to_fipi.free();
 }
 
-template<ElementOrder O>
-void SimulationFemHelmTet<O>::_assemble_fi_part_for_point_velocity()
+template<ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_point_velocity()
 {
     _vpi_to_ptr_in_b = fz::SafePtr<Cmplx*>(_vpi_count);
     for (uint64_t vpi = 0UL; vpi != _vpi_count; ++vpi)
@@ -646,8 +647,8 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_point_velocity()
     }
 }
 
-template<ElementOrder O>
-void SimulationFemHelmTet<O>::_assemble_fi_part_for_pressure()
+template<ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_pressure()
 {
     // define _pvi_to_ptr_in_a and _pvi_to_ptr_in_b
     _pvi_to_ptr_in_a = fz::SafePtr<fz::SafePtr<Cmplx*>>(_pvi_count);
@@ -688,8 +689,8 @@ void SimulationFemHelmTet<O>::_assemble_fi_part_for_pressure()
     }
 }
 
-template<ElementOrder O>
-void SimulationFemHelmTet<O>::_assemble_freq_independent_parts()
+template<ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_assemble_freq_independent_parts()
 {   
     _allocate_a();
     _allocate_b();

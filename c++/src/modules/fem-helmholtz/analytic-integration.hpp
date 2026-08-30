@@ -13,16 +13,22 @@
 namespace numav {
 
 // general get_stif_matrix_const_part declaration for all orders
-template<ElementOrder O>
-Eigen::Matrix<Float,ENIV_COUNT<O>,ENIV_COUNT<O>> get_stif_matrix_const_part(
-    const Eigen::Matrix<Float,DIM,ENIV_COUNT<O>>
+template<ElementShape S, ElementOrder O>
+Eigen::Matrix<Float,ENIV_COUNT<S,O>,ENIV_COUNT<S,O>> get_stif_matrix_const_part(
+    const Eigen::Matrix<Float,DIM,ENIV_COUNT<S,O>>
 );
 
 template<>
 Eigen::Matrix<
-    Float,ENIV_COUNT<ElementOrder::LINEAR>,ENIV_COUNT<ElementOrder::LINEAR>
-> get_stif_matrix_const_part<ElementOrder::LINEAR>(
-    const Eigen::Matrix<Float,DIM,ENIV_COUNT<ElementOrder::LINEAR>> coords
+    Float,
+    ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>,
+    ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>
+> get_stif_matrix_const_part<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>(
+    const Eigen::Matrix<
+        Float,
+        DIM,ENIV_COUNT<ElementShape::TETRAHEDRON, 
+        ElementOrder::LINEAR>
+    > coords
 ) {
     const Float x03 = coords(0UL, 0UL) - coords(0UL, 3UL);
     const Float x13 = coords(0UL, 1UL) - coords(0UL, 3UL);
@@ -48,7 +54,9 @@ Eigen::Matrix<
     const Float l = -(d + a + h);
 
     return Eigen::Matrix<
-        Float,ENIV_COUNT<ElementOrder::LINEAR>,ENIV_COUNT<ElementOrder::LINEAR>
+        Float,
+        ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>,
+        ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>
     > {
         {a*a + b*b + c*c, a*d + b*f + c*e, a*h + b*g + c*i, a*l + b*k + c*j},
         {              0, d*d + e*e + f*f, d*h + e*i + f*g, d*l + e*j + f*k},
@@ -86,15 +94,19 @@ Eigen::Matrix<Float,3UL,3UL> adjugate(const Eigen::Matrix<Float,3UL,3UL> mat) {
 template<>
 Eigen::Matrix<
     Float,
-    ENIV_COUNT<ElementOrder::QUADRATIC>,
-    ENIV_COUNT<ElementOrder::QUADRATIC>
-> get_stif_matrix_const_part<ElementOrder::QUADRATIC>(
-    const Eigen::Matrix<Float,DIM,ENIV_COUNT<ElementOrder::QUADRATIC>> coords
+    ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>,
+    ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>
+> get_stif_matrix_const_part<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>(
+    const Eigen::Matrix<
+        Float,
+        DIM,
+        ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>
+    > coords
 ) {
     Eigen::Matrix<
         Float,
-        ENIV_COUNT<ElementOrder::QUADRATIC>,
-        ENIV_COUNT<ElementOrder::QUADRATIC>
+        ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>,
+        ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>
     > matrix;
     matrix.setZero();
 
@@ -105,13 +117,19 @@ Eigen::Matrix<
     }};
     for (uint64_t gpi = 0UL; gpi != 4UL; ++gpi)
     {
-        const Eigen::Matrix<Float, ENIV_COUNT<ElementOrder::QUADRATIC>, DIM> 
-            nabla_n = shape_func_vol_gradient<ElementOrder::QUADRATIC>(
-                points[gpi][0UL], points[gpi][1UL], points[gpi][2UL]
-            );
+        const Eigen::Matrix<
+            Float,
+            ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>,
+            DIM
+        > nabla_n = shape_func_vol_gradient<
+            ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC
+        > (points[gpi][0UL], points[gpi][1UL], points[gpi][2UL]);
         
-        const Eigen::Matrix<Float, ENIV_COUNT<ElementOrder::QUADRATIC>, DIM> b =
-            nabla_n * adjugate(coords * nabla_n);
+        const Eigen::Matrix<
+            Float,
+            ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>,
+            DIM
+        > b = nabla_n * adjugate(coords * nabla_n);
         
         matrix += b * b.transpose();
     }
@@ -119,11 +137,12 @@ Eigen::Matrix<
     return matrix;
 }
 
-template<ElementOrder O>
-Eigen::Matrix<Float,ENIV_COUNT<O>,ENIV_COUNT<O>> MASS_MATRIX_CONST_PART = [] {
+template<ElementShape S, ElementOrder O>
+Eigen::Matrix<Float, ENIV_COUNT<S,O>, ENIV_COUNT<S,O>>
+MASS_MATRIX_CONST_PART = [] {
     if constexpr (O == ElementOrder::LINEAR) {
         return 
-        Eigen::Matrix<Float,ENIV_COUNT<O>,ENIV_COUNT<O>> {
+        Eigen::Matrix<Float,ENIV_COUNT<S,O>,ENIV_COUNT<S,O>> {
             {+1_F/10_F, +1_F/20_F, +1_F/20_F, +1_F/20_F},
             {+1_F/20_F, +1_F/10_F, +1_F/20_F, +1_F/20_F},
             {+1_F/20_F, +1_F/20_F, +1_F/10_F, +1_F/20_F},
@@ -132,7 +151,7 @@ Eigen::Matrix<Float,ENIV_COUNT<O>,ENIV_COUNT<O>> MASS_MATRIX_CONST_PART = [] {
     }
     if constexpr (O == ElementOrder::QUADRATIC) {
         return 
-        Eigen::Matrix<Float,ENIV_COUNT<O>,ENIV_COUNT<O>> {
+        Eigen::Matrix<Float,ENIV_COUNT<S,O>,ENIV_COUNT<S,O>> {
             { +1_F/70_F, +1_F/420_F, +1_F/420_F, +1_F/420_F, -1_F/105_F,
                 -1_F/105_F, -1_F/105_F,  -1_F/70_F,  -1_F/70_F,  -1_F/70_F},
             {+1_F/420_F,  +1_F/70_F, +1_F/420_F, +1_F/420_F, -1_F/105_F,
@@ -157,11 +176,12 @@ Eigen::Matrix<Float,ENIV_COUNT<O>,ENIV_COUNT<O>> MASS_MATRIX_CONST_PART = [] {
     }
 }();
 
-template<ElementOrder O>
-Eigen::Matrix<Float,ENIS_COUNT<O>,ENIS_COUNT<O>> DAMP_MATRIX_CONST_PART = [] {
+template<ElementShape S, ElementOrder O>
+Eigen::Matrix<Float, ENIS_COUNT<S,O>, ENIS_COUNT<S,O>>
+DAMP_MATRIX_CONST_PART = [] {
     if constexpr (O == ElementOrder::LINEAR) {
         return 
-        Eigen::Matrix<Float,ENIS_COUNT<O>,ENIS_COUNT<O>> {
+        Eigen::Matrix<Float,ENIS_COUNT<S,O>,ENIS_COUNT<S,O>> {
             { +1_F/6_F, +1_F/12_F, +1_F/12_F},
             {+1_F/12_F,  +1_F/6_F, +1_F/12_F},
             {+1_F/12_F, +1_F/12_F,  +1_F/6_F}
@@ -169,7 +189,7 @@ Eigen::Matrix<Float,ENIS_COUNT<O>,ENIS_COUNT<O>> DAMP_MATRIX_CONST_PART = [] {
     }
     if constexpr (O == ElementOrder::QUADRATIC) {
         return
-        Eigen::Matrix<Float,ENIS_COUNT<O>,ENIS_COUNT<O>> {
+        Eigen::Matrix<Float,ENIS_COUNT<S,O>,ENIS_COUNT<S,O>> {
         { +1_F/30_F, -1_F/180_F, -1_F/180_F,      +0_F,      +0_F, -1_F/45_F},
         {-1_F/180_F,  +1_F/30_F, -1_F/180_F,      +0_F, -1_F/45_F,      +0_F},
         {-1_F/180_F, -1_F/180_F,  +1_F/30_F, -1_F/45_F,      +0_F,      +0_F},
@@ -180,15 +200,15 @@ Eigen::Matrix<Float,ENIS_COUNT<O>,ENIS_COUNT<O>> DAMP_MATRIX_CONST_PART = [] {
     }
 }();
 
-template<ElementOrder O>
-Eigen::Matrix<Float,ENIS_COUNT<O>,1UL> FORC_VECTOR_CONST_PART = [] {
+template<ElementShape S, ElementOrder O>
+Eigen::Matrix<Float,ENIS_COUNT<S,O>,1UL> FORC_VECTOR_CONST_PART = [] {
     if constexpr (O == ElementOrder::LINEAR) {
-        return Eigen::Matrix<Float,ENIS_COUNT<O>,1UL> {
+        return Eigen::Matrix<Float,ENIS_COUNT<S,O>,1UL> {
             1_F/3_F, 1_F/3_F, 1_F/3_F
         };
     }
     if constexpr (O == ElementOrder::QUADRATIC) {
-        return Eigen::Matrix<Float,ENIS_COUNT<O>,1UL> {
+        return Eigen::Matrix<Float,ENIS_COUNT<S,O>,1UL> {
             0_F, 0_F, 0_F, 1_F/3_F, 1_F/3_F, 1_F/3_F
         };
     }

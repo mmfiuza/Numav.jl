@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include "numav/modules/fem-helmholtz/compile-options.hpp"
-
-#include <unordered_map>
-#include <unordered_set>
-#include <fstream>
 #include <memory>
+#include <array>
+#include <fstream>
 #include <optional>
+
+#include "common/log.hpp"
+#include "modules/fem-helmholtz/compile-options.hpp"
 
 #include "Eigen/Eigen"
 #include "Eigen/OrderingMethods"
@@ -16,60 +16,55 @@
 #include "indicators/progress_bar.hpp"
 #include "H5Cpp.h"
 #include "boost/bimap.hpp"
-#include "common/log.hpp"
 
 namespace numav {
 
+// type aliases
+inline constexpr Float operator"" _F(unsigned long long v) noexcept {
+    return static_cast<Float>(v);
+}
+inline constexpr Float operator"" _F(long double v) noexcept {
+    return static_cast<Float>(v);
+}
+
+// constants
+constexpr Float PI = 3.14159265358979323846_F;
 constexpr uint64_t DIM = 3UL; // dimension count in space
 constexpr Cmplx PENALTY_METHOD_CONSTANT = Cmplx(1e12_F, 0_F);
 
-enum class Equation : uint64_t {
-    HELMHOLTZ
-};
-
-enum class ElementShape : uint64_t {
-    TETRAHEDRON
-};
-
-enum class ElementOrder : uint64_t {
-    LINEAR,
-    QUADRATIC
-};
-
-template<ElementOrder O> constexpr uint64_t ENIS_COUNT = [] {
+template<ElementShape S, ElementOrder O>
+constexpr uint64_t ENIS_COUNT = [] {
     if constexpr (O == ElementOrder::LINEAR) { return 3UL; }
     if constexpr (O == ElementOrder::QUADRATIC) { return 6UL; }
     return 0UL;
 }();
 
-template<ElementOrder O> constexpr uint64_t EXTRA_ENIS_COUNT = [] {
-    return ENIS_COUNT<O> - ENIS_COUNT<ElementOrder::LINEAR>;
+template<ElementShape S, ElementOrder O>
+constexpr uint64_t EXTRA_ENIS_COUNT = [] {
+    return ENIS_COUNT<S,O> - ENIS_COUNT<S,ElementOrder::LINEAR>;
 }();
 
-template<ElementOrder O> constexpr uint64_t ENIV_COUNT = [] {
+template<ElementShape S, ElementOrder O>
+constexpr uint64_t ENIV_COUNT = [] {
     if constexpr (O == ElementOrder::LINEAR) { return 4UL;  }
     if constexpr (O == ElementOrder::QUADRATIC) { return 10UL; }
     return 0UL;
 }();
 
-template<ElementOrder O> constexpr uint64_t EXTRA_ENIV_COUNT = [] {
-    return ENIV_COUNT<O> - ENIV_COUNT<ElementOrder::LINEAR>;
+template<ElementShape S, ElementOrder O>
+constexpr uint64_t EXTRA_ENIV_COUNT = [] {
+    return ENIV_COUNT<S,O> - ENIV_COUNT<S,ElementOrder::LINEAR>;
 }();
 
-template<ElementOrder O>
-class Simulation<
-    NumericalMethod::FEM,
-    Equation::HELMHOLTZ,
-    ElementShape::TETRAHEDRON,
-    O
-> {
+template<ElementShape S, ElementOrder O>
+class SimulationFemHelmholtz {
 public:
-    Simulation();
-    ~Simulation();
-    Simulation(const Simulation&) = delete;
-    Simulation& operator=(const Simulation&) = delete;
-    Simulation(Simulation&&) noexcept;
-    Simulation& operator=(Simulation&&) noexcept;
+    SimulationFemHelmholtz();
+    ~SimulationFemHelmholtz();
+    SimulationFemHelmholtz(const SimulationFemHelmholtz&) = delete;
+    SimulationFemHelmholtz& operator=(const SimulationFemHelmholtz&) = delete;
+    SimulationFemHelmholtz(SimulationFemHelmholtz&&) noexcept;
+    SimulationFemHelmholtz& operator=(SimulationFemHelmholtz&&) noexcept;
 
     void _write_simulation_inputs_to_hdf5_file();
     void _allocate_a();
@@ -109,19 +104,19 @@ public:
 
     fz::SafePtr<const std::array<Float, DIM>> _ni_to_xyz;
 
-    fz::SafePtr<const std::array<uint64_t, ENIV_COUNT<O>>> _vei_to_ni;
+    fz::SafePtr<const std::array<uint64_t, ENIV_COUNT<S,O>>> _vei_to_ni;
     fz::SafePtr<const uint64_t> _vei_to_ivpg;
     fz::SafePtr<const Cmplx> _ivpg_to_density;
     fz::SafePtr<const Cmplx> _ivpg_to_soundspeed;
 
-    fz::SafePtr<const std::array<uint64_t, ENIS_COUNT<O>>> _isei_to_ni;
+    fz::SafePtr<const std::array<uint64_t, ENIS_COUNT<S,O>>> _isei_to_ni;
     fz::SafePtr<const uint64_t> _isei_to_ispgi;
     fz::SafePtr<const Cmplx> _ispgi_to_impedance;
 
     fz::SafePtr<const uint64_t> _vpi_to_ni;
     fz::SafePtr<const Cmplx> _vpi_to_volvel;
 
-    fz::SafePtr<const std::array<uint64_t, ENIS_COUNT<O>>> _vsei_to_ni;
+    fz::SafePtr<const std::array<uint64_t, ENIS_COUNT<S,O>>> _vsei_to_ni;
     fz::SafePtr<const uint64_t> _vsei_to_ispgv;
     fz::SafePtr<const Cmplx> _ispgv_to_velocity;
     
@@ -196,68 +191,14 @@ public:
     #endif
 };
 
-template<ElementShape S, ElementOrder O>
-void simulate_fem_helmholtz(
-    // freq vector
-    const Float* const fi_to_freq,
-    const uint64_t fi_count,
-    // mesh nodes
-    const Float* const ni_to_xyz,
-    const uint64_t ni_count,
-    // volume materials
-    const uint64_t* const vei_to_ni,
-    const uint64_t* const vei_to_ivpg,
-    const uint64_t vei_count,
-    const Cmplx* const ivpg_to_density,
-    const Cmplx* const ivpg_to_soundspeed,
-    const uint64_t ivpg_count,
-    // surface materials
-    const uint64_t* const isei_to_ni,
-    const uint64_t* const isei_to_ispgi,
-    const uint64_t isei_count,
-    const Cmplx* const ispgi_to_impedance,
-    const uint64_t ispgi_count,
-    // volume velocity
-    const uint64_t* const vpi_to_ni,
-    const Cmplx* const vpi_to_volvel,
-    const uint64_t vpi_count,
-    // surface velocity
-    const uint64_t* const vsei_to_ni,
-    const uint64_t* const vsei_to_ispgv,
-    const uint64_t vsei_count,
-    const Cmplx* const ispgv_to_velocity,
-    const uint64_t ispgv_count,
-    // pressure
-    const uint64_t* const pni_to_ni,
-    const uint64_t pni_count,
-    const uint64_t* const pvi_to_pni_count,
-    const Cmplx* const pvi_to_pressure,
-    const uint64_t pvi_count,
-    // export
-    const char* const hdf5_file_path
-);
-
-// alias for simulation type
-template<ElementOrder O>
-using SimulationFemHelmTet = Simulation<
-    NumericalMethod::FEM,
-    Equation::HELMHOLTZ,
-    ElementShape::TETRAHEDRON,
-    O
->;
-
 // macro for explicit instantiation declarations
 #define NUMAV_INSTANTIATE_SIM_AC_FEM_FREQ_D3 \
     namespace numav { \
-        template class Simulation< \
-            NumericalMethod::FEM, \
-            Equation::HELMHOLTZ, \
+        template class SimulationFemHelmholtz< \
             ElementShape::TETRAHEDRON, \
             ElementOrder::LINEAR \
         >; \
-        template class Simulation< \
-            NumericalMethod::FEM, \
-            Equation::HELMHOLTZ, \
+        template class SimulationFemHelmholtz< \
             ElementShape::TETRAHEDRON, \
             ElementOrder::QUADRATIC \
         >; \

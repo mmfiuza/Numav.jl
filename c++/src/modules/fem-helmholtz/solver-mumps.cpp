@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
 #include "numav/numav.hpp"
+#include "modules/fem-helmholtz/fem-helmholtz.hpp"
 #include "common/exception.hpp"
 
 #if NUMAV_SYSTEM_SOLVER == NUMAV_MUMPS
@@ -19,8 +20,8 @@ void print_mumps_error(const MUMPS_INT error_id) {
     error("MUMPS error code: {}", error_id);
 }
 
-template <ElementOrder O>
-void SimulationFemHelmTet<O>::_define_sparsity_pattern_using_mumps_solver()
+template <ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_define_sparsity_pattern_using_mumps_solver()
 {
     // generate _a_row_idx and _a_col_idx
     const uint64_t nzi_count = _ni_connections.size();
@@ -70,8 +71,8 @@ void SimulationFemHelmTet<O>::_define_sparsity_pattern_using_mumps_solver()
     }
 }
 
-template <ElementOrder O>
-void SimulationFemHelmTet<O>::_solve_using_mumps_solver()
+template <ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_solve_using_mumps_solver()
 {
     // factorize
     _solver.job = JOB_FACTORIZE;
@@ -99,8 +100,8 @@ void SimulationFemHelmTet<O>::_solve_using_mumps_solver()
     }
 }
 
-template <ElementOrder O>
-void SimulationFemHelmTet<O>::_terminate_mumps_solver()
+template <ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_terminate_mumps_solver()
 {
     _solver.job = JOB_END;
     zmumps_c(&_solver);

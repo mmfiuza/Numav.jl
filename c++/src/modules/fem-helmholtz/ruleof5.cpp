@@ -1,12 +1,13 @@
 // Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
 #include "numav/numav.hpp"
+#include "modules/fem-helmholtz/fem-helmholtz.hpp"
 #include "common/log.hpp"
 
 namespace numav {
 
-template<ElementOrder O>
-SimulationFemHelmTet<O>::Simulation() {
+template<ElementShape S, ElementOrder O>
+SimulationFemHelmholtz<S,O>::SimulationFemHelmholtz() {
     log::set_level();
     log::set_pattern();
     #if NUMAV_SYSTEM_SOLVER == NUMAV_EIGEN
@@ -17,8 +18,8 @@ SimulationFemHelmTet<O>::Simulation() {
     #endif
 }
 
-template<ElementOrder O>
-SimulationFemHelmTet<O>::~Simulation() {
+template<ElementShape S, ElementOrder O>
+SimulationFemHelmholtz<S,O>::~SimulationFemHelmholtz() {
     _a_vals.free();
     _b_row_idx.free();
     _b_vals.free();
@@ -64,14 +65,14 @@ SimulationFemHelmTet<O>::~Simulation() {
     #endif
 }
 
-template<ElementOrder O>
-SimulationFemHelmTet<O>::Simulation(
-    Simulation&& other
+template<ElementShape S, ElementOrder O>
+SimulationFemHelmholtz<S,O>::SimulationFemHelmholtz(
+    SimulationFemHelmholtz&& other
 ) noexcept = default;
 
-template<ElementOrder O>
-SimulationFemHelmTet<O>& SimulationFemHelmTet<O>::operator=(
-    Simulation&& other
+template<ElementShape S, ElementOrder O>
+SimulationFemHelmholtz<S,O>& SimulationFemHelmholtz<S,O>::operator=(
+    SimulationFemHelmholtz&& other
 ) noexcept = default;
 
 } // namespace numav

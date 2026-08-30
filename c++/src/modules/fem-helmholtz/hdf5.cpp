@@ -1,6 +1,8 @@
 // Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
 #include "numav/numav.hpp"
+#include "modules/fem-helmholtz/fem-helmholtz.hpp"
+
 #include "common/exception.hpp"
 #include "common/utils.hpp"
 #include "common/hdf5.hpp"
@@ -9,11 +11,8 @@
 
 namespace numav {
 
-template<Equation E>
 const H5std_string HDF5_EQUATION = [] {
-    if constexpr (E == Equation::HELMHOLTZ) {
-        return "helmholtz";
-    }
+    return "helmholtz";
 }();
 
 template<ElementShape S>
@@ -33,8 +32,8 @@ const H5std_string HDF5_ELEMENT_ORDER = [] {
     }
 }();
 
-template <ElementOrder O>
-H5::DataSet SimulationFemHelmTet<O>::_begin_hdf5_file(
+template <ElementShape S, ElementOrder O>
+H5::DataSet SimulationFemHelmholtz<S,O>::_begin_hdf5_file(
 ) {
     // create the file
     _hdf5_file = H5::H5File(_hdf5_file_path, H5F_ACC_TRUNC);
@@ -45,10 +44,10 @@ H5::DataSet SimulationFemHelmTet<O>::_begin_hdf5_file(
     // write simulation type
     H5::Group sim_type_grp = _hdf5_file.createGroup("/simulation_type");
     write_string_attr(sim_type_grp, 
-        "numerical_method", HDF5_NUMERICAL_METHOD<NumericalMethod::FEM>
+        "numerical_method", HDF5_NUMERICAL_METHOD
     );
     write_string_attr(sim_type_grp, 
-        "equation", HDF5_EQUATION<Equation::HELMHOLTZ>
+        "equation", HDF5_EQUATION
     );
     write_string_attr(sim_type_grp,
         "element_shape", HDF5_ELEMENT_SHAPE<ElementShape::TETRAHEDRON>
@@ -72,8 +71,8 @@ H5::DataSet SimulationFemHelmTet<O>::_begin_hdf5_file(
     return pressure_dataset;
 }
 
-template <ElementOrder O>
-void SimulationFemHelmTet<O>::_write_simulation_inputs_to_hdf5_file(
+template <ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_write_simulation_inputs_to_hdf5_file(
 ) {
     H5::Group inputs_grp = _hdf5_file.createGroup("/inputs");
 
@@ -113,10 +112,10 @@ void SimulationFemHelmTet<O>::_write_simulation_inputs_to_hdf5_file(
     //         "surface_elements",
     //         to_one_based_index(
     //             _sei_to_ni.data()->data(),
-    //             _sei_count * ENIS_COUNT<O>
+    //             _sei_count * ENIS_COUNT<S,O>
     //         ).get(),
     //         _sei_count,
-    //         ENIS_COUNT<O>
+    //         ENIS_COUNT<S,O>
     //     );
     //     write_string_attr(dataset, "units", "1");
     //     H5DSset_label(dataset.getId(), 0UL, "surface_element_index");
@@ -129,10 +128,10 @@ void SimulationFemHelmTet<O>::_write_simulation_inputs_to_hdf5_file(
     //         "volume_elements",
     //         to_one_based_index(
     //             _vei_to_ni.data()->data(),
-    //             _vei_count * ENIV_COUNT<O>
+    //             _vei_count * ENIV_COUNT<S,O>
     //         ).get(),
     //         _vei_count,
-    //         ENIV_COUNT<O>
+    //         ENIV_COUNT<S,O>
     //     );
     //     write_string_attr(dataset, "units", "1");
     //     H5DSset_label(dataset.getId(), 0UL, "volume_element_index");
@@ -425,8 +424,8 @@ void SimulationFemHelmTet<O>::_write_simulation_inputs_to_hdf5_file(
     // }
 }
 
-template<ElementOrder O>
-void SimulationFemHelmTet<O>::_write_solution_for_one_freq(
+template<ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_write_solution_for_one_freq(
     H5::DataSet& pressure_dataset,
     const uint64_t fi
 ) {

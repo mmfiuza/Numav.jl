@@ -3,17 +3,15 @@
 #pragma once
 
 #include "numav/numav.hpp"
+#include "modules/fem-helmholtz/fem-helmholtz.hpp"
 #include "H5Cpp.h"
 
 namespace numav {
 
 const H5std_string HDF5_SIGNATURE("numav_result_hdf5_0.2.0");
 
-template<NumericalMethod N>
 const H5std_string HDF5_NUMERICAL_METHOD = [] {
-    if constexpr (N == NumericalMethod::FEM) {
-        return "finite_element_method";
-    }
+    return "finite_element_method";
 }();
 
 void write_string_attr(

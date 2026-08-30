@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
 #include "numav/numav.hpp"
+#include "modules/fem-helmholtz/fem-helmholtz.hpp"
 
 namespace numav {
 
@@ -44,7 +45,7 @@ void simulate_fem_helmholtz(
     // export
     const char* const hdf5_file_path
 ) {
-    auto s = Simulation<NumericalMethod::FEM, Equation::HELMHOLTZ, S, O>();
+    auto s = SimulationFemHelmholtz<S,O>();
 
     // freq vector
     s._fi_to_freq = fz::SafePtr<const Float>::make_view(
@@ -60,11 +61,11 @@ void simulate_fem_helmholtz(
 
     // volume materials
     s._vei_to_ni =
-        fz::SafePtr<const std::array<uint64_t, ENIV_COUNT<O>>>::make_view(
-            reinterpret_cast<const std::array<uint64_t, ENIV_COUNT<O>>*>(
+        fz::SafePtr<const std::array<uint64_t, ENIV_COUNT<S,O>>>::make_view(
+            reinterpret_cast<const std::array<uint64_t, ENIV_COUNT<S,O>>*>(
                 vei_to_ni
             ),
-            vei_count*ENIV_COUNT<O>
+            vei_count*ENIV_COUNT<S,O>
         );
     s._vei_to_ivpg = fz::SafePtr<const uint64_t>::make_view(
         vei_to_ivpg, vei_count
@@ -80,11 +81,11 @@ void simulate_fem_helmholtz(
 
     // surface materials
     s._isei_to_ni =
-        fz::SafePtr<const std::array<uint64_t, ENIS_COUNT<O>>>::make_view(
-            reinterpret_cast<const std::array<uint64_t, ENIS_COUNT<O>>*>(
+        fz::SafePtr<const std::array<uint64_t, ENIS_COUNT<S,O>>>::make_view(
+            reinterpret_cast<const std::array<uint64_t, ENIS_COUNT<S,O>>*>(
                 isei_to_ni
             ),
-            isei_count*ENIS_COUNT<O>
+            isei_count*ENIS_COUNT<S,O>
         );
     s._isei_to_ispgi = fz::SafePtr<const uint64_t>::make_view(
         isei_to_ispgi, isei_count
@@ -106,11 +107,11 @@ void simulate_fem_helmholtz(
 
     // surface velocity
     s._vsei_to_ni =
-        fz::SafePtr<const std::array<uint64_t, ENIS_COUNT<O>>>::make_view(
-            reinterpret_cast<const std::array<uint64_t, ENIS_COUNT<O>>*>(
+        fz::SafePtr<const std::array<uint64_t, ENIS_COUNT<S,O>>>::make_view(
+            reinterpret_cast<const std::array<uint64_t, ENIS_COUNT<S,O>>*>(
                 vsei_to_ni
             ),
-            vsei_count*ENIS_COUNT<O>
+            vsei_count*ENIS_COUNT<S,O>
         );
     s._vsei_to_ispgv = fz::SafePtr<const uint64_t>::make_view(
         vsei_to_ispgv, vsei_count

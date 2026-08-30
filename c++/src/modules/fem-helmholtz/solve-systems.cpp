@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
 #include "numav/numav.hpp"
+#include "modules/fem-helmholtz/fem-helmholtz.hpp"
 #include "common/utils.hpp"
 #include "common/log.hpp"
 
@@ -8,14 +9,14 @@
 
 namespace numav {
 
-template<ElementOrder O>
-void SimulationFemHelmTet<O>::_clear_data_not_used_in_freq_iterations()
+template<ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_clear_data_not_used_in_freq_iterations()
 {
     _ni_connections.free();
 }
 
-template<ElementOrder O>
-void SimulationFemHelmTet<O>::_solve_systems()
+template<ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_solve_systems()
 {
     H5::DataSet pressure_data_set = _begin_hdf5_file();
 

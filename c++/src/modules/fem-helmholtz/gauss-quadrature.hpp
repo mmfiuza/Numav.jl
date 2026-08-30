@@ -7,24 +7,40 @@
 
 namespace numav {
 
-template<ElementOrder O> constexpr uint64_t NGP_FORC = [] {
-    if constexpr (O == ElementOrder::LINEAR) { return 1UL; }
-    if constexpr (O == ElementOrder::QUADRATIC) { return 3UL; }
+template<ElementShape S, ElementOrder O> constexpr uint64_t NGP_FORC = [] {
+    if constexpr (S==ElementShape::TETRAHEDRON && O==ElementOrder::LINEAR) {
+         return 1UL;
+    }
+    if constexpr (S==ElementShape::TETRAHEDRON && O==ElementOrder::QUADRATIC) {
+        return 3UL;
+    }
 }();
 
-template<ElementOrder O> constexpr uint64_t NGP_DAMP = [] {
-    if constexpr (O == ElementOrder::LINEAR) { return 1UL; }
-    if constexpr (O == ElementOrder::QUADRATIC) { return 3UL; }
+template<ElementShape S, ElementOrder O> constexpr uint64_t NGP_DAMP = [] {
+    if constexpr (S==ElementShape::TETRAHEDRON && O==ElementOrder::LINEAR) {
+        return 1UL;
+    }
+    if constexpr (S==ElementShape::TETRAHEDRON && O==ElementOrder::QUADRATIC) {
+        return 3UL;
+    }
 }();
 
-template<ElementOrder O> constexpr uint64_t NGP_STIF = [] {
-    if constexpr (O == ElementOrder::LINEAR) { return 1UL; }
-    if constexpr (O == ElementOrder::QUADRATIC) { return 4UL; }
+template<ElementShape S, ElementOrder O> constexpr uint64_t NGP_STIF = [] {
+    if constexpr (S==ElementShape::TETRAHEDRON && O==ElementOrder::LINEAR) {
+        return 1UL;
+    }
+    if constexpr (S==ElementShape::TETRAHEDRON && O==ElementOrder::QUADRATIC) {
+        return 4UL;
+    }
 }();
 
-template<ElementOrder O> constexpr uint64_t NGP_MASS = [] {
-    if constexpr (O == ElementOrder::LINEAR) { return 4UL;  }
-    if constexpr (O == ElementOrder::QUADRATIC) { return 15UL; }
+template<ElementShape S, ElementOrder O> constexpr uint64_t NGP_MASS = [] {
+    if constexpr (S==ElementShape::TETRAHEDRON && O==ElementOrder::LINEAR) {
+        return 4UL;
+    }
+    if constexpr (S==ElementShape::TETRAHEDRON && O==ElementOrder::QUADRATIC) {
+        return 15UL;
+    }
 }();
 
 template<uint64_t N>

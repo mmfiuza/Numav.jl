@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
 #include "numav/numav.hpp"
+#include "modules/fem-helmholtz/fem-helmholtz.hpp"
 #include "common/utils.hpp"
 
 #include <limits>
@@ -9,8 +10,8 @@
 
 namespace numav {
 
-template <ElementOrder O>
-void SimulationFemHelmTet<O>::_define_sparsity_pattern_using_internal_solver()
+template <ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_define_sparsity_pattern_using_internal_solver()
 {
     // problem dimensions
     const uint64_t nzi_count = _ni_connections.size();
@@ -56,8 +57,8 @@ void SimulationFemHelmTet<O>::_define_sparsity_pattern_using_internal_solver()
     a_row_idx.free();
     a_col_idx.free();
 }
-template <ElementOrder O>
-void SimulationFemHelmTet<O>::_solve_using_internal_solver()
+template <ElementShape S, ElementOrder O>
+void SimulationFemHelmholtz<S,O>::_solve_using_internal_solver()
 {
     // dense b vector
     for (uint64_t i = 0UL; i != _b_vals.size(); ++i) {
