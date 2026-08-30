@@ -12,40 +12,6 @@
 
 namespace numav {
 
-// TODO: check if pass by ref is needed
-void trim_right_whitespace(std::string_view& sv); 
-
-template<typename T>
-T parse(std::string_view str) {
-    trim_right_whitespace(str);
-    const std::string tmp(str); // strto* requires null-termination
-    char* end;
-    errno = 0;
-    T value;
-    if constexpr (std::is_same_v<T, float>) {
-        value = std::strtof(tmp.c_str(), &end);
-    }
-    else if constexpr (std::is_same_v<T, double>) {
-        value = std::strtod(tmp.c_str(), &end);
-    }
-    else if constexpr (std::is_same_v<T, long double>) {
-        value = std::strtold(tmp.c_str(), &end);
-    }
-    else if constexpr (std::is_integral_v<T> && std::is_signed_v<T>) {
-        value = static_cast<T>(std::strtoll(tmp.c_str(), &end, 10));
-    }
-    else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T>) {
-        value = static_cast<T>(std::strtoull(tmp.c_str(), &end, 10));
-    }
-    else {
-        static_assert(!sizeof(T), "unsupported type for parse()");
-    }
-    if (end != tmp.c_str() + tmp.size() || errno == ERANGE) {
-        throw std::invalid_argument("invalid number format");
-    }
-    return value;
-}
-
 template<typename T>
 std::tuple<T,T> make_ascending_tuple(const T a, const T b) {
     return a<b ? std::make_tuple(a,b) : std::make_tuple(b,a);
