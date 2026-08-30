@@ -48,6 +48,7 @@ function set_result_export_path!(
         error("Result export path is already defined.")
     end
     s._hdf5_file_path = path_to_hdf5_file
+    return nothing
 end
 
 function _organize_volume_physical_group_data!(s::SimulationFemHelmholtz)
@@ -55,6 +56,7 @@ function _organize_volume_physical_group_data!(s::SimulationFemHelmholtz)
     for vei in 1:s._vei_count
         s._vei_to_ivpg[vei] = s._evpg_ivpg_bimap[s._vei_to_evpg[vei]]
     end
+    return nothing
 end
 
 function _organize_impedance_physical_group_data!(s::SimulationFemHelmholtz)
@@ -75,6 +77,7 @@ function _organize_impedance_physical_group_data!(s::SimulationFemHelmholtz)
             s._isei_to_ispgi[isei] = s._espg_ispgi_bimap[s._sei_to_espg[sei]]
         end
     end
+    return nothing
 end
 
 function _organize_velocity_physical_group_data!(s::SimulationFemHelmholtz)
@@ -95,6 +98,7 @@ function _organize_velocity_physical_group_data!(s::SimulationFemHelmholtz)
             s._vsei_to_ispgv[vsei] = s._espg_ispgv_bimap[s._sei_to_espg[sei]]
         end
     end
+    return nothing
 end
 
 function _organize_pressure_physical_group_data!(s::SimulationFemHelmholtz)
@@ -236,6 +240,8 @@ function _write_pq_matrices(s::SimulationFemHelmholtz)
                 s._pvi_to_pressure_func[pvi](s._fi_to_freq[fi])
         end
     end
+
+    return nothing
 end
 
 
@@ -295,10 +301,12 @@ function run!(s::Simulation)
         s._hdf5_file_path
     )
     s._did_run = true
+    return nothing
 end
 
 function _check_if_did_run(s::Simulation)
     if s._did_run
         error("This simulation has already been run.")
     end
+    return nothing
 end

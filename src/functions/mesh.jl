@@ -10,6 +10,7 @@ function _check_if_mesh_is_defined(s::SimulationWithMesh)
     if !s._is_mesh_defined
         error("Mesh not defined. Call load_mesh! to do so.")
     end
+    return nothing
 end
 
 function _load_bdf!(
@@ -85,6 +86,7 @@ function _load_bdf!(
             end
         end
     end
+    return nothing
 end
 
 function _generate_non_vtx_nodes!(s::SimulationFemHelmholtz)
@@ -152,6 +154,7 @@ function _generate_non_vtx_nodes!(s::SimulationFemHelmholtz)
             s._sei_to_ni[ENIS_COUNT_LIN + i, sei] = idxs_extra_nodes[tup]
         end
     end
+    return nothing
 end
 
 function load_mesh!(
@@ -175,4 +178,5 @@ function load_mesh!(
         _generate_non_vtx_nodes!(s)
     end
     s._is_mesh_defined = true
+    return nothing
 end

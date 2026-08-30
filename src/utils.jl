@@ -36,4 +36,5 @@ end
 
 function _throw_simulation_not_applicable()
     throw(ArgumentError("Function not applicable to the simulation type"))
-end
+    return nothing
+end 

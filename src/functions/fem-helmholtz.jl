@@ -23,6 +23,7 @@ function _check_if_espg_is_valid(s::SimulationFemHelmholtz, espg::Int)
     )
         error("Physical group $espg already assigned.")
     end
+    return nothing
 end
 
 function _get_closest_point(
@@ -65,6 +66,7 @@ function _check_if_it_can_run(s::SimulationFemHelmholtz)
                   " Call add_volume_material! to do so.")
         end
     end
+    return nothing
 end
 
 function add_volume_material!( 
@@ -101,6 +103,7 @@ function add_volume_material!(
     s._evpg_ivpg_bimap[evpg] = ivpg
     push!(s._ivpg_to_density_func, density_func)
     push!(s._ivpg_to_soundspeed_func, soundspeed_func)
+    return nothing
 end
 
 function add_surface_material!( 
@@ -129,6 +132,7 @@ function add_surface_material!(
 
     impedance_func::Function = _fdpq_to_function(specific_acoustic_impedance)
     push!(s._ispgi_to_impedance_func, impedance_func);
+    return nothing
 end
 
 function add_sound_source!( 
@@ -250,6 +254,7 @@ function add_sound_source!(
         end
     end
     s._is_any_source_defined = true;
+    return nothing
 end
 
 function _order_points(

@@ -66,6 +66,7 @@ function set_frequency!(
     s._fi_to_freq = Float64.(Vector(vector))
     s._fi_count = Main.length(s._fi_to_freq)
     s._is_freq_defined = true
+    return nothing
 end
 
 function get_frequency_vector(
