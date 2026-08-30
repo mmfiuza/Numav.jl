@@ -14,26 +14,40 @@ Eigen::Matrix<Float, ENIS_COUNT<S,O>, 1UL> shape_func_sfc(
     const Float xi1
 );
 template<>
-Eigen::Matrix<Float, ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>, 1UL>
-shape_func_sfc<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>(
+Eigen::Matrix<
+    Float,
+    ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>,
+    1UL
+> shape_func_sfc<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>(
     const Float xi0,
     const Float xi1
 ) {
     const Float xi2 = 1_F - xi0 - xi1;
-    return Eigen::Matrix<Float, ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>, 1UL>(
+    return Eigen::Matrix<
+        Float,
+        ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>,
+        1UL
+    >(
         xi0,
         xi1,
         xi2
     );
 }
 template<>
-Eigen::Matrix<Float, ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>, 1UL>
-shape_func_sfc<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>(
+Eigen::Matrix<
+    Float,
+    ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>,
+    1UL
+> shape_func_sfc<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>(
     const Float xi0,
     const Float xi1
 ) {
     const Float xi2 = 1_F - xi0 - xi1;
-    return Eigen::Matrix<Float, ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>, 1UL>(
+    return Eigen::Matrix<
+        Float,
+        ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>,
+        1UL
+    >(
         xi0*(2_F*xi0 - 1_F),
         xi1*(2_F*xi1 - 1_F),
         xi2*(2_F*xi2 - 1_F),
@@ -49,27 +63,41 @@ Eigen::Matrix<Float, ENIS_COUNT<S,O>, 2UL> shape_func_sfc_gradient(
     const Float xi1
 );
 template<>
-Eigen::Matrix<Float, ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>, 2UL>
-shape_func_sfc_gradient<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>(
+Eigen::Matrix<
+    Float,
+    ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>,
+    2UL
+> shape_func_sfc_gradient<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>(
     const Float xi0,
     const Float xi1
 ) {
     (void)xi0;
     (void)xi1;
-    return Eigen::Matrix<Float, ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>, 2UL> {
+    return Eigen::Matrix<
+        Float,
+        ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>,
+        2UL
+    > {
         {+1_F, +0_F},
         {+0_F, +1_F},
         {-1_F, -1_F}
     };
 }
 template<>
-Eigen::Matrix<Float, ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>, 2UL>
-shape_func_sfc_gradient<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>(
+Eigen::Matrix<
+    Float,
+    ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>,
+    2UL
+> shape_func_sfc_gradient<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>(
     const Float xi0,
     const Float xi1
 ) {
     const Float xi2 = 1_F - xi0 - xi1;
-    return Eigen::Matrix<Float, ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>, 2UL> {
+    return Eigen::Matrix<
+        Float,
+        ENIS_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>,
+        2UL
+    > {
         { 4_F*xi0-1,        0_F             },
         { 0_F,              4_F*xi1-1       },
         { 1_F - 4_F*xi2,    1_F - 4_F*xi2   },
@@ -86,14 +114,21 @@ Eigen::Matrix<Float, ENIV_COUNT<S,O>, 1UL> shape_func_vol(
     const Float xi2
 );
 template<>
-Eigen::Matrix<Float, ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>, 1UL>
-shape_func_vol<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>(
+Eigen::Matrix<
+    Float,
+    ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>,
+    1UL
+> shape_func_vol<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>(
     const Float xi0,
     const Float xi1,
     const Float xi2
 ) {
     const Float xi3 = 1_F - xi0 - xi1 - xi2;
-    return Eigen::Matrix<Float, ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>, 1UL>(
+    return Eigen::Matrix<
+        Float,
+        ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>,
+        1UL
+    >(
         xi0,
         xi1,
         xi2,
@@ -101,14 +136,21 @@ shape_func_vol<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>(
     );
 }
 template<>
-Eigen::Matrix<Float, ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>, 1UL>
-shape_func_vol<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>(
+Eigen::Matrix<
+    Float,
+    ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>,
+    1UL
+> shape_func_vol<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>(
     const Float xi0,
     const Float xi1,
     const Float xi2
 ) {
     const Float xi3 = 1_F - xi0 - xi1 - xi2;
-    return Eigen::Matrix<Float, ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>, 1UL>(
+    return Eigen::Matrix<
+        Float,
+        ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>,
+        1UL
+    >(
         xi0*(2_F*xi0 - 1_F),
         xi1*(2_F*xi1 - 1_F),
         xi2*(2_F*xi2 - 1_F),
@@ -122,7 +164,6 @@ shape_func_vol<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>(
     );
 }
 
-
 template<ElementShape S, ElementOrder O>
 Eigen::Matrix<Float, ENIV_COUNT<S,O>, DIM> shape_func_vol_gradient(
     const Float xi0,
@@ -130,8 +171,11 @@ Eigen::Matrix<Float, ENIV_COUNT<S,O>, DIM> shape_func_vol_gradient(
     const Float xi2
 );
 template<>
-Eigen::Matrix<Float, ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>, DIM>
-shape_func_vol_gradient<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>(
+Eigen::Matrix<
+    Float,
+    ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>,
+    DIM
+> shape_func_vol_gradient<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>(
     const Float xi0,
     const Float xi1,
     const Float xi2
@@ -139,7 +183,11 @@ shape_func_vol_gradient<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>(
     (void)xi0;
     (void)xi1;
     (void)xi2;
-    return Eigen::Matrix<Float, ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>, DIM> {
+    return Eigen::Matrix<
+        Float,
+        ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>,
+        DIM
+    > {
         {+1_F, +0_F, +0_F},
         {+0_F, +1_F, +0_F},
         {+0_F, +0_F, +1_F},
@@ -147,14 +195,21 @@ shape_func_vol_gradient<ElementShape::TETRAHEDRON, ElementOrder::LINEAR>(
     };
 }
 template<>
-Eigen::Matrix<Float, ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>, DIM>
-shape_func_vol_gradient<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>(
+Eigen::Matrix<
+    Float,
+    ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>,
+    DIM
+> shape_func_vol_gradient<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>(
     const Float xi0,
     const Float xi1,
     const Float xi2
 ) {
     const Float xi3 = 1_F - xi0 - xi1 - xi2;
-    return Eigen::Matrix<Float, ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>, DIM> {
+    return Eigen::Matrix<
+        Float,
+        ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>,
+        DIM
+    > {
         { 4_F*xi0 - 1_F,    0_F,              0_F             },
         { 0_F,              4_F*xi1 - 1_F,    0_F             },
         { 0_F,              0_F,              4_F*xi2 - 1_F   },

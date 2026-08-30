@@ -71,7 +71,7 @@ void SimulationFemHelmholtz<S,O>::_solve_systems()
         // add damping matrix to a
         for (uint64_t ispgi = 0UL; ispgi != _ispgi_count; ++ispgi)
         {
-            const Cmplx impedance = _ispgi_to_impedance[fi*_ispgi_count + ispgi];
+            const Cmplx impedance = _ispgi_to_impedance[fi*_ispgi_count+ispgi];
             const Cmplx damp_fd_part = Cmplx(0_F, omega) / impedance;
             const uint64_t fipi_count = _ispgi_to_ptr_in_a[ispgi].size();
             for (uint64_t fipi = 0UL; fipi != fipi_count; ++fipi) {

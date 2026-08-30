@@ -239,7 +239,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_vol_elements()
         // stiffness matrix
         #if NUMAV_STIF_INTEGRATION_METHOD == NUMAV_GAUSS_QUADRATURE
             constexpr std::array<std::array<Float,DIM>,NGP_STIF<S,O>>
-                GAUSS_POINTS_STIF = GAUSS_POINTS_VOL<NGP_STIF<S,O>>;
+                GAUSS_POINTS_STIF = GAUSS_POINTS_VOL<S,NGP_STIF<S,O>>;
             for (uint64_t gpi = 0UL; gpi != NGP_STIF<S,O>; ++gpi)
             {
                 const Eigen::Matrix<Float,ENIV_COUNT<S,O>,DIM> nabla_n =
@@ -264,7 +264,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_vol_elements()
                     b_matrix * b_matrix.transpose();
                 
                 auto& bbt_detj_w = bbt;
-                bbt_detj_w = bbt * detj * GAUSS_WEIGHTS_VOL<NGP_STIF<S,O>>[gpi];
+                bbt_detj_w = bbt*detj*GAUSS_WEIGHTS_VOL<S,NGP_STIF<S,O>>[gpi];
 
                 for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci) {
                     _ivpg_to_stif_fi_part[ivpg][fipi_vol[nci]] +=
@@ -286,7 +286,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_vol_elements()
         // mass matrix
         #if NUMAV_MASS_INTEGRATION_METHOD == NUMAV_GAUSS_QUADRATURE
             constexpr std::array<std::array<Float,DIM>,NGP_MASS<S,O>>
-                GAUSS_POINTS_MASS = GAUSS_POINTS_VOL<NGP_MASS<S,O>>;
+                GAUSS_POINTS_MASS = GAUSS_POINTS_VOL<S,NGP_MASS<S,O>>;
             for (uint64_t gpi = 0UL; gpi != NGP_MASS<S,O>; ++gpi)
             {
                 const Eigen::Matrix<Float,ENIV_COUNT<S,O>,DIM> nabla_n =
@@ -312,7 +312,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_vol_elements()
                     n * n.transpose();
                     
                 auto& nnt_detj_w = nnt; 
-                nnt_detj_w = nnt * detj * GAUSS_WEIGHTS_VOL<NGP_MASS<S,O>>[gpi];
+                nnt_detj_w = nnt*detj*GAUSS_WEIGHTS_VOL<S,NGP_MASS<S,O>>[gpi];
                 
                 for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci) {
                     _ivpg_to_mass_fi_part[ivpg][fipi_vol[nci]] -=
@@ -446,7 +446,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_impedance()
         #if NUMAV_DAMP_INTEGRATION_METHOD == NUMAV_GAUSS_QUADRATURE
             std::array<std::array<Float,DIM>, ENIS_COUNT<S,O>> triangle_3d;
             for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
-                const uint64_t ni = _sei_to_ni[sei][eni];
+                const uint64_t ni = _isei_to_ni[isei][eni];
                 triangle_3d[eni] = _ni_to_xyz[ni];
             }
             std::array<std::array<Float,2UL>,ENIS_COUNT<S,O>> triangle_2d =
@@ -459,7 +459,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_impedance()
             }
 
             constexpr std::array<std::array<Float,2UL>,NGP_DAMP<S,O>>
-                GAUSS_POINTS_DAMP = GAUSS_POINTS_SFC<NGP_DAMP<S,O>>;
+                GAUSS_POINTS_DAMP = GAUSS_POINTS_SFC<S,NGP_DAMP<S,O>>;
             for (uint64_t gpi = 0UL; gpi != NGP_DAMP<S,O>; ++gpi)
             {
                 const Eigen::Matrix<Float,ENIS_COUNT<S,O>,2UL> nabla_n =
@@ -483,7 +483,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_impedance()
                     n * n.transpose();
                                 
                 auto& nnt_detj_w = nnt;
-                nnt_detj_w = nnt * detj * GAUSS_WEIGHTS_SFC<NGP_DAMP<S,O>>[gpi];
+                nnt_detj_w = nnt*detj*GAUSS_WEIGHTS_SFC<S,NGP_DAMP<S,O>>[gpi];
                 
                 for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci) {
                     _ispgi_to_damp_fi_part[ispgi][fipi_damp[nci]] += 
@@ -567,7 +567,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_velocity()
         #if NUMAV_FORC_INTEGRATION_METHOD == NUMAV_GAUSS_QUADRATURE
             std::array<std::array<Float,DIM>, ENIS_COUNT<S,O>> triangle_3d;
             for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
-                const uint64_t ni = _sei_to_ni[sei][eni];
+                const uint64_t ni = _vsei_to_ni[vsei][eni];
                 triangle_3d[eni] = _ni_to_xyz[ni];
             }
             std::array<std::array<Float,2UL>,ENIS_COUNT<S,O>> triangle_2d =
@@ -580,7 +580,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_velocity()
             }
 
             constexpr std::array<std::array<Float,2UL>,NGP_FORC<S,O>>
-                GAUSS_POINTS_FORC = GAUSS_POINTS_SFC<NGP_FORC<S,O>>;
+                GAUSS_POINTS_FORC = GAUSS_POINTS_SFC<S,NGP_FORC<S,O>>;
             for (uint64_t gpi = 0UL; gpi != NGP_FORC<S,O>; ++gpi)
             {
                 const Eigen::Matrix<Float,ENIS_COUNT<S,O>, 2UL> nabla_n =
@@ -601,7 +601,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_velocity()
                     );
 
                 auto& n_detj_w = n;
-                n_detj_w = n * detj * GAUSS_WEIGHTS_SFC<NGP_FORC<S,O>>[gpi];
+                n_detj_w = n * detj * GAUSS_WEIGHTS_SFC<S,NGP_FORC<S,O>>[gpi];
                 
                 for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
                     _ispgv_to_forc_fi_part[ispgv][fipi_forc[eni]] +=

@@ -96,7 +96,10 @@ Eigen::Matrix<
     Float,
     ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>,
     ENIV_COUNT<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>
-> get_stif_matrix_const_part<ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC>(
+> get_stif_matrix_const_part<
+    ElementShape::TETRAHEDRON,
+    ElementOrder::QUADRATIC
+>(
     const Eigen::Matrix<
         Float,
         DIM,
@@ -123,7 +126,7 @@ Eigen::Matrix<
             DIM
         > nabla_n = shape_func_vol_gradient<
             ElementShape::TETRAHEDRON, ElementOrder::QUADRATIC
-        > (points[gpi][0UL], points[gpi][1UL], points[gpi][2UL]);
+        >(points[gpi][0UL], points[gpi][1UL], points[gpi][2UL]);
         
         const Eigen::Matrix<
             Float,
