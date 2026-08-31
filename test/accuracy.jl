@@ -2,7 +2,6 @@
 
 @testset "accuracy" begin
 
-using Numav
 import DelimitedFiles
 import HDF5
 

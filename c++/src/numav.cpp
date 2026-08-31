@@ -43,7 +43,9 @@ void simulate_fem_helmholtz(
     const Cmplx* const pvi_to_pressure,
     const uint64_t pvi_count,
     // export
-    const char* const hdf5_file_path
+    const char* const hdf5_file_path,
+    // other
+    void (*call_after_every_iteration)()
 ) {
     auto s = SimulationFemHelmholtz<S,O>();
 
@@ -138,9 +140,9 @@ void simulate_fem_helmholtz(
     // export
     s._hdf5_file_path = hdf5_file_path;
 
+    s._call_after_every_iteration = call_after_every_iteration;
+
     // run
-    log::print_opening();
-    log::print_opening_ac_fem_freq_d3();
     s._assemble_freq_independent_parts();
     s._solve_systems();
 }
@@ -174,7 +176,8 @@ void simulate_fem_helmholtz(
     const uint64_t* const, \
     const Cmplx* const, \
     const uint64_t, \
-    const char* const
+    const char* const, \
+    void (*)()
 
 // Explicit template instantiations
 template

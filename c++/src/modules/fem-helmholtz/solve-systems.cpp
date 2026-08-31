@@ -24,14 +24,6 @@ void SimulationFemHelmholtz<S,O>::_solve_systems()
 
     _clear_data_not_used_in_freq_iterations();
 
-    log::print_start_time();
-
-    // start progress bar
-    const uint64_t bar_progress_max =
-        (_fi_to_freq[0UL] == 0_F) ? _fi_count - 1UL : _fi_count;
-    uint64_t bar_progress = 
-        log::start_progress_bar(_progress_bar, bar_progress_max);
-
     for (uint64_t fi = 0UL; fi != _fi_count; ++fi)
     {
         // frequency calculations
@@ -84,7 +76,7 @@ void SimulationFemHelmholtz<S,O>::_solve_systems()
         for (uint64_t ivpg = 0UL; ivpg != _ivpg_count; ++ivpg)
         {
             const Cmplx density = _ivpg_to_density[fi*_ivpg_count + ivpg];
-            const Cmplx soundspeed = _ivpg_to_soundspeed[fi*_ivpg_count + ivpg];
+            const Cmplx soundspeed = _ivpg_to_soundspeed[fi*_ivpg_count+ivpg];
             const Cmplx stif_fd_part = Cmplx(1_F, 0_F) / density;
             const Cmplx mass_fd_part =
                 omega_squared / (density * soundspeed * soundspeed);
@@ -122,8 +114,8 @@ void SimulationFemHelmholtz<S,O>::_solve_systems()
             static_assert(false, "Invalid NUMAV_SYSTEM_SOLVER.");
         #endif
 
-        // increment progress bar
-        log::increment_progress_bar(_progress_bar, bar_progress);
+        // external call
+        _call_after_every_iteration();
 
         write_results_to_file_and_continue:
         
@@ -139,8 +131,6 @@ void SimulationFemHelmholtz<S,O>::_solve_systems()
     #endif
 
     _hdf5_file.close();
-    log::finish_progress_bar();
-    log::print_finish_time();
 }
 
 } // namespace numav

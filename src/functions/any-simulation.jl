@@ -244,6 +244,16 @@ function _write_pq_matrices(s::SimulationFemHelmholtz)
     return nothing
 end
 
+function _update_bar()
+    print("|")
+end
+
+function _call_after_every_iteration()
+    if !_disable_progress_bar
+        _update_progress_bar()
+    end
+    return nothing
+end
 
 function run!(s::Simulation)
     _check_if_it_can_run(s)
@@ -254,6 +264,13 @@ function run!(s::Simulation)
     _organize_pressure_physical_group_data!(s)
 
     _write_pq_matrices(s)
+
+    _print_opening_fem_helmholtz()
+    _print_start_time()
+    if !_disable_progress_bar
+        bar_tick_count = s._fi_to_freq[1] == 0.0 ? s._fi_count-1 : s._fi_count
+        _create_progress_bar(bar_tick_count)
+    end
 
     cpp_function::Ref{Function} =
     if _is_quadratic(s)
@@ -298,8 +315,14 @@ function run!(s::Simulation)
         vec(s._pvi_to_pressure_values),
         s._pvi_count,
         # export
-        s._hdf5_file_path
+        s._hdf5_file_path,
+        # other
+        CxxWrap.@safe_cfunction(_call_after_every_iteration, Cvoid, ())
     )
+    if !_disable_progress_bar
+        _finish_progress_bar()
+    end
+    _print_finish_time()
     s._did_run = true
     return nothing
 end

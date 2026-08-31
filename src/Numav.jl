@@ -12,6 +12,7 @@ module Numav
     include("utils.jl") # various things
     include("options.jl") # define every Option singleton
     include("simulation.jl") # definition of the Simulation type and subtypes
+    include("log.jl")
 
     # include functions
     include("functions/any-simulation.jl")

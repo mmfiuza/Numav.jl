@@ -2,10 +2,6 @@
 
 @testset "general" begin
 
-using Numav
-
-redirect_stdout(devnull) do
-
 result_path = "test1.h5"
 mesh_path = "test1.bdf"
 pqv = "pqv.txt"
@@ -151,7 +147,4 @@ run!(s)
 
 # plot_pressure_field(result_path) # todo: bring this test back
 
-end # redirect_stdout
-
 end # @testset
-

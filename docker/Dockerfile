@@ -25,7 +25,6 @@ RUN apt-get update && apt-get install -y \
     liblapack-dev \
     libmumps-seq-dev \
     patchelf \
-    libboost-dev \
     xorg-dev \
     mesa-utils \
     xvfb \

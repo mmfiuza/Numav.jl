@@ -13,9 +13,7 @@
 #include "Eigen/Eigen"
 #include "Eigen/OrderingMethods"
 #include "SafePtr.hpp"
-#include "indicators/progress_bar.hpp"
 #include "H5Cpp.h"
-#include "boost/bimap.hpp"
 
 namespace numav {
 
@@ -154,7 +152,7 @@ public:
     uint64_t _pni_count;
     uint64_t _pvi_count;
 
-    std::unique_ptr<indicators::ProgressBar> _progress_bar;
+    std::function<void()> _call_after_every_iteration;
 
     #if NUMAV_SYSTEM_SOLVER == NUMAV_INTERNAL
         LdltSolver<Cmplx> _solver;

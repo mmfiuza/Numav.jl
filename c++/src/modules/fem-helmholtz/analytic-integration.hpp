@@ -217,4 +217,4 @@ Eigen::Matrix<Float,ENIS_COUNT<S,O>,1UL> FORC_VECTOR_CONST_PART = [] {
     }
 }();
 
-} // namespace numav{
+} // namespace numav

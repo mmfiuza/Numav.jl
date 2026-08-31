@@ -1,9 +1,6 @@
 // Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
 #include "jlcxx/jlcxx.hpp"
-#include "jlcxx/stl.hpp"
-#include "jlcxx/functions.hpp"
-
 #include "numav/numav.hpp"
 
 JLCXX_MODULE define_julia_module(jlcxx::Module& mod)

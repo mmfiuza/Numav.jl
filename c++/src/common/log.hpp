@@ -6,7 +6,6 @@
 
 #include "spdlog/spdlog.h"
 #include "fmt/core.h"
-#include <indicators/progress_bar.hpp>
 
 namespace numav::log {
 
@@ -23,20 +22,5 @@ namespace numav::log {
     void error(fmt::format_string<T...> fmt, T&&... args) {
         spdlog::error(fmt, args...);
     }
-
-    void print_opening();
-    void print_opening_ac_fem_freq_d3();
-    void print_start_time();
-    void print_finish_time();
-
-    uint64_t start_progress_bar(
-        std::unique_ptr<indicators::ProgressBar>& bar,
-        const uint64_t progress_max
-    );
-    void increment_progress_bar(
-        std::unique_ptr<indicators::ProgressBar>& bar,
-        uint64_t& bar_progress
-    );
-    void finish_progress_bar();
 
 } // namespace numav::log
