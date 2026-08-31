@@ -75,3 +75,8 @@ cmake --install ./build
 ```
 julia --project=docs docs/make.jl
 ```
+
+# How to preview docs
+```
+julia docs/preview.jl
+```
