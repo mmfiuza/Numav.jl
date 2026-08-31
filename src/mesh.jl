@@ -1,6 +1,6 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
-# This file has functions applicable to Simulation subtypes that have a mesh.
+# This file has code applicable to Simulation subtypes that have a mesh.
 
 export load_mesh!
 
@@ -13,10 +13,7 @@ function _check_if_mesh_is_defined(s::SimulationWithMesh)
     return nothing
 end
 
-function _load_bdf!(
-    s::SimulationWithMesh,
-    path_to_mesh::AbstractString,
-)
+function _load_bdf!(s::SimulationWithMesh, path_to_mesh::AbstractString)
     if !isfile(path_to_mesh)
         error("Could not open file: $path_to_mesh")
     end
@@ -179,4 +176,23 @@ function load_mesh!(
     end
     s._is_mesh_defined = true
     return nothing
+end
+
+function _get_closest_node(
+    s::SimulationWithMesh,
+    xyz::AbstractVector{<:Real}
+)
+    minimum_distance_squared = Inf
+    ni_closest = 0
+    for ni in 1:s._ni_count
+        distance_squared =
+            (s._ni_to_xyz[1, ni] - xyz[1])^2 +
+            (s._ni_to_xyz[2, ni] - xyz[2])^2 +
+            (s._ni_to_xyz[3, ni] - xyz[3])^2
+        if distance_squared < minimum_distance_squared
+            minimum_distance_squared = distance_squared
+            ni_closest = ni
+        end
+    end
+    return ni_closest
 end

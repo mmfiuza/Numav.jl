@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
-# This files has functions applicable for Simulation subtypes the run iterating
-# on frequency steps
+# This files has code applicable for Simulation subtypes the run iterating
+# on frequency steps.
 
 export
     set_frequency!,
@@ -69,8 +69,6 @@ function set_frequency!(
     return nothing
 end
 
-function get_frequency_vector(
-    s::SimulationWithFreqDomain
-)
+function get_frequency_vector(s::SimulationWithFreqDomain)
     return copy(s._fi_to_freq)
 end

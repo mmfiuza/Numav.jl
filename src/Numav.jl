@@ -3,21 +3,22 @@
 # This file has the Numav module, that includes all the source code.
 
 module Numav
-
+    
     # automatically create docstrings from files in src/docs
     import ExternalDocstrings
     ExternalDocstrings.@define_docstrings
 
-    include("cpp.jl") # wrapped C++ part
-    include("utils.jl") # various things
-    include("options.jl") # define every Option singleton
-    include("simulation.jl") # definition of the Simulation type and subtypes
+    include("cpp.jl")
+    include("utils.jl")
+    include("options.jl")
+    include("simulation.jl")
     include("log.jl")
-
-    # include functions
-    include("functions/any-simulation.jl")
-    include("functions/mesh.jl")
-    include("functions/frequency.jl")
-    include("functions/fem-helmholtz.jl")
+    include("fem-helmholtz/simulation.jl")
+    include("fem-helmholtz/materials.jl")
+    include("fem-helmholtz/organize-data.jl")
+    include("fem-helmholtz/plot.jl")
+    include("fem-helmholtz/run.jl")
+    include("frequency.jl")
+    include("mesh.jl")
     
 end
