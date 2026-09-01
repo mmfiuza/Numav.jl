@@ -32,7 +32,7 @@ function test(linear_or_quadratic::String)
     elseif linear_or_quadratic == "quadratic"
         ord = Quadratic
     end
-
+    f(x) = x
     # simulate
     s = create_simulation(
         numerical_method = Fem,
@@ -44,17 +44,17 @@ function test(linear_or_quadratic::String)
     load_mesh!(s, "test1.bdf")
     add_volume_material!(s, physical_group=1, density=1.2, speed_of_sound=343)
     add_volume_material!(s, physical_group=2, density=1.0, speed_of_sound=100)
-    add_volume_material!(s, physical_group=3, density=2.0, speed_of_sound=200)
+    add_volume_material!(s, physical_group=3, density=f, speed_of_sound=f)
     add_surface_material!(s, physical_group=4, specific_acoustic_impedance=400)
-    add_surface_material!(s, physical_group=3, specific_acoustic_impedance=300)
+    add_surface_material!(s, physical_group=3, specific_acoustic_impedance=f)
     add_sound_source!(s, physical_group=6, pressure=8)
-    add_sound_source!(s, physical_group=5, pressure=7)
+    add_sound_source!(s, physical_group=5, pressure=f)
     add_sound_source!(s, coordinates=[5, 0, 0], pressure=2)
-    add_sound_source!(s, coordinates=[5, 4, 0], pressure=3)
+    add_sound_source!(s, coordinates=[5, 4, 0], pressure=f)
     add_sound_source!(s, coordinates=[0, 0, 0], volume_velocity=10)
-    add_sound_source!(s, coordinates=[0, 4, 0], volume_velocity=3)
+    add_sound_source!(s, coordinates=[0, 4, 0], volume_velocity=f)
     add_sound_source!(s, physical_group=1, particle_velocity=5)
-    add_sound_source!(s, physical_group=2, particle_velocity=9)
+    add_sound_source!(s, physical_group=2, particle_velocity=f)
     set_result_export_path!(s, "result-actual-"*linear_or_quadratic*".h5")
     run!(s)
 
@@ -88,9 +88,9 @@ function test(linear_or_quadratic::String)
 end
 
 spl_diff_linear, phase_diff_linear = test("linear")
-spl_diff_quadratic, phase_diff_quadratic = test("quadratic")
-
 @test spl_diff_linear < 0.01 && phase_diff_linear < 0.01
+
+spl_diff_quadratic, phase_diff_quadratic = test("quadratic")
 @test spl_diff_quadratic < 0.01 && phase_diff_quadratic < 0.01
 
 end # @testset
