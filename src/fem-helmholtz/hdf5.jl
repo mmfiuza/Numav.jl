@@ -3,7 +3,7 @@
 using HDF5
 
 const HDF5_SIGNATURE = "numav_result_hdf5_0.3.0"
-const HDF5_NUMERICAL_METHOD = "fem"
+const HDF5_NUMERICAL_METHOD = "finite_element_method"
 const HDF5_EQUATION = "helmholtz"
 
 function _hdf5_element_shape_str(shape::ElementShape)
