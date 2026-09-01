@@ -13,7 +13,6 @@
 #include "Eigen/Eigen"
 #include "Eigen/OrderingMethods"
 #include "SafePtr.hpp"
-#include "H5Cpp.h"
 
 namespace numav {
 
@@ -64,10 +63,9 @@ public:
     SimulationFemHelmholtz(SimulationFemHelmholtz&&) noexcept;
     SimulationFemHelmholtz& operator=(SimulationFemHelmholtz&&) noexcept;
 
-    void _write_simulation_inputs_to_hdf5_file();
     void _allocate_a();
     void _allocate_b();
-    void _allocate_x();
+    // void _allocate_x();
     void _assemble_fi_part_for_point_velocity();
     void _assemble_fi_part_for_sfc_velocity();
     void _assemble_fi_part_for_sfc_impedance();
@@ -75,8 +73,6 @@ public:
     void _assemble_fi_part_for_pressure();
     void _assemble_freq_independent_parts();
     void _solve_systems();
-    H5::DataSet _begin_hdf5_file();
-    void _write_solution_for_one_freq(H5::DataSet& ds, const uint64_t fi);
     void _clear_data_not_used_in_freq_iterations();
     #if NUMAV_SYSTEM_SOLVER == NUMAV_INTERNAL
         void _define_sparsity_pattern_using_internal_solver();
@@ -93,10 +89,6 @@ public:
         void _solve_using_mumps_solver();
         void _terminate_mumps_solver();
     #endif
-    
-    H5::H5File _hdf5_file;
-
-    std::string _hdf5_file_path;
     
     fz::SafePtr<const Float> _fi_to_freq;
 

@@ -43,7 +43,7 @@ void simulate_fem_helmholtz(
     const Cmplx* const pvi_to_pressure,
     const uint64_t pvi_count,
     // export
-    const char* const hdf5_file_path,
+    Cmplx* const ni_to_solution,
     // other
     void (*call_after_every_iteration)()
 ) {
@@ -138,7 +138,7 @@ void simulate_fem_helmholtz(
     s._pvi_count = pvi_count;
 
     // export
-    s._hdf5_file_path = hdf5_file_path;
+    s._x = fz::SafePtr<Cmplx>::make_view(ni_to_solution, ni_count);
 
     s._call_after_every_iteration = call_after_every_iteration;
 
@@ -176,7 +176,7 @@ void simulate_fem_helmholtz(
     const uint64_t* const, \
     const Cmplx* const, \
     const uint64_t, \
-    const char* const, \
+    Cmplx* const, \
     void (*)()
 
 // Explicit template instantiations

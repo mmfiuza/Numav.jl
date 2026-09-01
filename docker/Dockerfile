@@ -102,12 +102,6 @@ RUN chmod -R 777 ${JULIA_DEPOT_PATH}
 # agree to the Xcode license terms (needed to run BinaryBuilder)
 ENV BINARYBUILDER_AUTOMATIC_APPLE=true
 
-# install HDF5
-RUN wget https://github.com/HDFGroup/hdf5/releases/\
-download/2.1.1/hdf5-2.1.1-ubuntu-2404_gcc.deb
-RUN apt install ./hdf5-2.1.1-ubuntu-2404_gcc.deb
-RUN rm hdf5-2.1.1-ubuntu-2404_gcc.deb
-
 # create devuser
 ARG DEFAULT_UID=1000
 ARG DEFAULT_GID=1000

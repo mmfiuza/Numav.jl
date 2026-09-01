@@ -130,11 +130,11 @@ void SimulationFemHelmholtz<S,O>::_allocate_b()
     _b_vals = fz::SafePtr<Cmplx>(_b_row_idx.size());
 }
 
-template <ElementShape S, ElementOrder O>
-void SimulationFemHelmholtz<S,O>::_allocate_x()
-{
-    _x = fz::SafePtr<Cmplx>(_ni_count);
-}
+// template <ElementShape S, ElementOrder O>
+// void SimulationFemHelmholtz<S,O>::_allocate_x()
+// {
+//     _x = fz::SafePtr<Cmplx>(_ni_count);
+// }
 
 template<ElementShape S, ElementOrder O>
 void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_vol_elements()
@@ -694,7 +694,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_freq_independent_parts()
 {   
     _allocate_a();
     _allocate_b();
-    _allocate_x();
+    // _allocate_x();
     #if NUMAV_SYSTEM_SOLVER == NUMAV_INTERNAL
         _define_sparsity_pattern_using_internal_solver();
     #elif NUMAV_SYSTEM_SOLVER == NUMAV_EIGEN

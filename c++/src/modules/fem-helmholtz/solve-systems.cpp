@@ -18,10 +18,6 @@ void SimulationFemHelmholtz<S,O>::_clear_data_not_used_in_freq_iterations()
 template<ElementShape S, ElementOrder O>
 void SimulationFemHelmholtz<S,O>::_solve_systems()
 {
-    H5::DataSet pressure_data_set = _begin_hdf5_file();
-
-    _write_simulation_inputs_to_hdf5_file();
-
     _clear_data_not_used_in_freq_iterations();
 
     for (uint64_t fi = 0UL; fi != _fi_count; ++fi)
@@ -114,13 +110,10 @@ void SimulationFemHelmholtz<S,O>::_solve_systems()
             static_assert(false, "Invalid NUMAV_SYSTEM_SOLVER.");
         #endif
 
+        write_results_to_file_and_continue:
+
         // external call
         _call_after_every_iteration();
-
-        write_results_to_file_and_continue:
-        
-        // write solution to hdf5 file
-        _write_solution_for_one_freq(pressure_data_set, fi);
     }
 
     // terminate solver
@@ -129,8 +122,6 @@ void SimulationFemHelmholtz<S,O>::_solve_systems()
     #elif NUMAV_SYSTEM_SOLVER == NUMAV_MUMPS
         _terminate_mumps_solver();
     #endif
-
-    _hdf5_file.close();
 }
 
 } // namespace numav

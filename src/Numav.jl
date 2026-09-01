@@ -17,6 +17,7 @@ module Numav
     include("fem-helmholtz/materials.jl")
     include("fem-helmholtz/organize-data.jl")
     include("fem-helmholtz/plot.jl")
+    include("fem-helmholtz/hdf5.jl")
     include("fem-helmholtz/run.jl")
     include("frequency.jl")
     include("mesh.jl")

@@ -19,9 +19,7 @@ Run:
 rm -rf build &&
 cmake c++ -B build -D CMAKE_BUILD_TYPE=Release \
 -D CMAKE_PREFIX_PATH="\
-/opt/intel/oneapi/mkl/2025.2/lib/cmake;\
-/HDF_Group/HDF5/2.1.1" &&
-cmake --build build --parallel ${nproc}
+/opt/intel/oneapi/mkl/2025.2/lib/cmake"
 ```
 
 # How to build libnumav (dynamic)
@@ -31,9 +29,8 @@ rm -rf build &&
 cmake c++ -B build -D CMAKE_BUILD_TYPE=Release \
 -D BUILD_SHARED_LIBS=TRUE \
 -D CMAKE_PREFIX_PATH="\
-/opt/intel/oneapi/mkl/2025.2/lib/cmake;\
-/HDF_Group/HDF5/2.1.1" &&
-cmake --build build --parallel ${nproc}
+/opt/intel/oneapi/mkl/2025.2/lib/cmake" &&
+cmake --build build --parallel $(nproc)
 ```
 
 # How to build the JLL for local testing
@@ -65,9 +62,8 @@ cmake c++ -B build \
 -D CMAKE_INSTALL_PREFIX=c++/override \
 -D CMAKE_PREFIX_PATH="\
 /opt/intel/oneapi/mkl/2025.2/lib/cmake;\
-/usr/local/share/julia/artifacts/6d260b2393efd5030d726537e5efe3573d0fbd28;\
-/HDF_Group/HDF5/2.1.1" &&
-cmake --build build --parallel ${nproc} &&
+/usr/local/share/julia/artifacts/6d260b2393efd5030d726537e5efe3573d0fbd28" &&
+cmake --build build --parallel $(nproc) &&
 cmake --install ./build
 ```
 

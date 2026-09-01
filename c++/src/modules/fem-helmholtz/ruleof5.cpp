@@ -50,7 +50,7 @@ SimulationFemHelmholtz<S,O>::~SimulationFemHelmholtz() {
     }
     _pvi_to_ptr_in_a.free();
     _pvi_to_ptr_in_b.free();
-    _x.free();
+    // _x.free();
     #if NUMAV_SYSTEM_SOLVER == NUMAV_INTERNAL
         _b_dense.free();
         _a_diag.free();

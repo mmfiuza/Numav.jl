@@ -58,7 +58,7 @@ namespace numav {
         const Cmplx* const pvi_to_pressure,
         const uint64_t pvi_count,
         // export
-        const char* const hdf5_file_path,
+        Cmplx* const ni_to_solution,
         // other
         void (*call_after_every_iteration)()
     );

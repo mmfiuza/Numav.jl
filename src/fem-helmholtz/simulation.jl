@@ -1,5 +1,6 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
+import HDF5
 using Bijections: Bijection
 
 @enum ElementShape ElementShape_TETRAHEDRON
@@ -72,6 +73,8 @@ using Bijections: Bijection
     _pni_to_ni::Vector{Int} = []
 
     _pvi_to_pni_count::Vector{Int} = []
+
+    _x::Vector{ComplexF64} = []
 
     _is_freq_defined::Bool = false
     _is_mesh_defined::Bool = false

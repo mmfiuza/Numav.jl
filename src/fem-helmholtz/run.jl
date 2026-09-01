@@ -24,10 +24,27 @@ function _check_if_it_can_run(s::SimulationFemHelmholtz)
     return nothing
 end
 
+const _current_simulation = Ref{Union{SimulationFemHelmholtz,Nothing}}(nothing)
+const _current_pressure_dataset = Ref{Union{Any, Nothing}}(nothing)
+const _fi = Ref{Int}(0)
+
+function _fi_increment()
+    _fi[] += 1
+    return _fi[]
+end
+function _fi_reset()
+    _fi[] = 0
+    return _fi[]
+end
+
 function _call_after_every_iteration()
     if !_disable_progress_bar
         _update_progress_bar()
     end
+    s = _current_simulation[]
+    pressure_dataset = _current_pressure_dataset[]
+    _fi_increment()
+    pressure_dataset[:, _fi[]] = s._x
     return nothing
 end
 
@@ -39,6 +56,14 @@ function run!(s::SimulationFemHelmholtz)
     _organize_velocity_physical_group_data!(s)
     _organize_pressure_physical_group_data!(s)
     _write_pq_matrices(s)
+
+    file, pressure_dataset = _begin_hdf5_file(s)
+    _write_simulation_inputs_to_hdf5_file(s, file)
+
+    s._x = Vector{ComplexF64}(undef, s._ni_count)
+    _current_simulation[] = s
+    _current_pressure_dataset[] = pressure_dataset
+    _fi_reset()
 
     _print_simulation_started()
     _print_start_time()
@@ -90,10 +115,13 @@ function run!(s::SimulationFemHelmholtz)
         vec(s._pvi_to_pressure_values),
         s._pvi_count,
         # export
-        s._hdf5_file_path,
+        s._x,
         # other
         CxxWrap.@safe_cfunction(_call_after_every_iteration, Cvoid, ())
     )
+    if isopen(file)
+        close(file)
+    end
     if !_disable_progress_bar
         _finish_progress_bar()
     end
