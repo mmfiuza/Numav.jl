@@ -74,10 +74,6 @@ function plot_pressure_field(
     ni_to_xyz = HDF5.read(file["/inputs/mesh/nodes"])
     ni_to_xyz = Float32.(ni_to_xyz)
 
-    sei_to_ni = HDF5.read(file["/inputs/mesh/surface_elements"])
-    sei_to_ni = convert(Matrix{Int}, sei_to_ni)
-    sei_count::Int = size(sei_to_ni, 2)
-
     vei_to_ni = HDF5.read(file["/inputs/mesh/volume_elements"])
     vei_to_ni = convert(Matrix{Int}, vei_to_ni)
     vei_count::Int = size(vei_to_ni, 2)
@@ -87,7 +83,6 @@ function plot_pressure_field(
             "`plot_pressure_field` is not accurate for second order elements."*
             " The graph shown does not account for the non-vertex nodes"
         )
-        sei_to_ni = sei_to_ni[1:3, :]
         vei_to_ni = vei_to_ni[1:4, :]
     end
 
@@ -228,18 +223,32 @@ function plot_pressure_field(
         return colors[dim]
     end
 
-    # get surface elements segments to plot boundaries
-    sfc_segments_set::Set{Tuple{Int,Int}} = Set()
-    for sei in 1:sei_count
-        for (enis_1, enis_2) in [(1,2), (1,3), (2,3)]
-            ni_1::Int = sei_to_ni[enis_1, sei]
-            ni_2::Int = sei_to_ni[enis_2, sei]
-            if ni_1 > ni_2
-                ni_1, ni_2 = ni_2, ni_1
-            end
-            push!(sfc_segments_set, (ni_1, ni_2))
+    # find the boundary faces of the volume mesh
+    face_count::Dict{NTuple{3,Int}, Int} = Dict()
+    for vei in 1:vei_count
+        for (eniv_1, eniv_2, eniv_3) in [(1,2,3), (1,2,4), (1,3,4), (2,3,4)]
+            ni_1 = vei_to_ni[eniv_1, vei]
+            ni_2 = vei_to_ni[eniv_2, vei]
+            ni_3 = vei_to_ni[eniv_3, vei]
+            face_key = Tuple(sort([ni_1, ni_2, ni_3]))
+            face_count[face_key] = get(face_count, face_key, 0) + 1
         end
     end
+
+    # get surface elements segments to plot boundaries
+    sfc_segments_set::Set{Tuple{Int,Int}} = Set()
+    for (face_key, count) in face_count
+        if count == 1
+            (ni_1, ni_2, ni_3) = face_key
+            for (eni_1, eni_2) in [(ni_1,ni_2), (ni_1,ni_3), (ni_2,ni_3)]
+                if eni_1 > eni_2
+                    eni_1, eni_2 = eni_2, eni_1
+                end
+                push!(sfc_segments_set, (eni_1, eni_2))
+            end
+        end
+    end
+    empty!(face_count)
     sfc_segments::Vector{GLMakie.Point3f} = Vector{GLMakie.Point3f}(
         undef, 2*length(sfc_segments_set)
     )
