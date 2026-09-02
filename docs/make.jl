@@ -30,6 +30,6 @@ Documenter.makedocs(
 )
 
 Documenter.deploydocs(
-    repo = "github.com/mmfiuza/numav.git",
+    repo = "github.com/mmfiuza/Numav.jl.git",
     devbranch = "main",
 )
