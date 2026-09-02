@@ -4,15 +4,18 @@
 
 #include "numav/numav.hpp"
 
+#include <iostream>
+#include <sstream>
 #include <stdexcept>
-#include <format>
 #include <string>
 
 namespace numav {
 
     template<typename... T>
-    void error(std::format_string<T...> msg_fmt, T&&... args) {
-        std::string msg = std::format(msg_fmt, std::forward<T>(args)...);
+    void error(T&&... args) {
+        std::ostringstream oss;
+        (oss << ... << std::forward<T>(args));
+        std::string msg = oss.str();
         std::cerr << msg << "\n";
         throw std::runtime_error("numav error");
     }

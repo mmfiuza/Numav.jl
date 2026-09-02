@@ -10,7 +10,7 @@
 namespace numav {
 
 void print_dss_error(const MKL_INT error_id) {
-    error("oneMLK error code: {}", error_id);
+    error("oneMLK error code: ", error_id);
 }
 
 template <ElementShape S, ElementOrder O>

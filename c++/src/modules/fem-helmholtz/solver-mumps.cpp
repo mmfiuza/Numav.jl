@@ -3,7 +3,6 @@
 #include "numav/numav.hpp"
 #include "modules/fem-helmholtz/fem-helmholtz.hpp"
 #include "common/exception.hpp"
-#include <format>
 
 #if NUMAV_SYSTEM_SOLVER == NUMAV_MUMPS
 
