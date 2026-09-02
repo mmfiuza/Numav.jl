@@ -16,7 +16,6 @@ RUN apt-get update && apt-get install -y \
     cmake \
     curl \
     squashfs-tools \
-    libspdlog-dev \
     wget \
     gosu \
     tree \
@@ -25,7 +24,6 @@ RUN apt-get update && apt-get install -y \
     liblapack-dev \
     libmumps-seq-dev \
     patchelf \
-    libboost-dev \
     xorg-dev \
     mesa-utils \
     xvfb \
@@ -102,12 +100,6 @@ RUN chmod -R 777 ${JULIA_DEPOT_PATH}
 
 # agree to the Xcode license terms (needed to run BinaryBuilder)
 ENV BINARYBUILDER_AUTOMATIC_APPLE=true
-
-# install HDF5
-RUN wget https://github.com/HDFGroup/hdf5/releases/\
-download/2.1.1/hdf5-2.1.1-ubuntu-2404_gcc.deb
-RUN apt install ./hdf5-2.1.1-ubuntu-2404_gcc.deb
-RUN rm hdf5-2.1.1-ubuntu-2404_gcc.deb
 
 # create devuser
 ARG DEFAULT_UID=1000

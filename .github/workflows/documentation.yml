@@ -16,9 +16,6 @@ jobs:
       pull-requests: read
       statuses: write
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: julia-bindings/Numav.jl
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2

@@ -1,3 +1,10 @@
+# License
+
+```@raw html
+  <img src="assets/agpl3-logo.svg" alt="AGPL3 logo" style="height: 8rem; width: auto; margin-bottom: 1rem;"/>
+```
+
+```
                     GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
 
@@ -659,3 +666,4 @@ specific requirements.
 if any, to sign a "copyright disclaimer" for the program, if necessary.
 For more information on this, and how to apply and follow the GNU AGPL, see
 <https://www.gnu.org/licenses/>.
+```
