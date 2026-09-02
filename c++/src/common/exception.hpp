@@ -3,17 +3,17 @@
 #pragma once
 
 #include "numav/numav.hpp"
-#include "common/log.hpp"
 
 #include <stdexcept>
-
-#include "fmt/core.h"
+#include <format>
+#include <string>
 
 namespace numav {
 
     template<typename... T>
-    void error(fmt::format_string<T...> fmt, T&&... args) {
-        log::error(fmt, args...);
+    void error(std::format_string<T...> msg_fmt, T&&... args) {
+        std::string msg = std::format(msg_fmt, std::forward<T>(args)...);
+        std::cerr << msg << "\n";
         throw std::runtime_error("numav error");
     }
 

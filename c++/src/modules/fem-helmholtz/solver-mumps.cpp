@@ -3,6 +3,7 @@
 #include "numav/numav.hpp"
 #include "modules/fem-helmholtz/fem-helmholtz.hpp"
 #include "common/exception.hpp"
+#include <format>
 
 #if NUMAV_SYSTEM_SOLVER == NUMAV_MUMPS
 
@@ -17,7 +18,7 @@ constexpr MUMPS_INT JOB_FACTORIZE = 2;
 constexpr MUMPS_INT JOB_SOLVE = 3;
 
 void print_mumps_error(const MUMPS_INT error_id) {
-    error("MUMPS error code: {}", error_id);
+    error("MUMPS error code: ", error_id);
 }
 
 template <ElementShape S, ElementOrder O>

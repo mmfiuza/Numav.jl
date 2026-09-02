@@ -7,7 +7,6 @@
 #include <fstream>
 #include <optional>
 
-#include "common/log.hpp"
 #include "modules/fem-helmholtz/compile-options.hpp"
 
 #include "Eigen/Eigen"

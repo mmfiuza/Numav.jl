@@ -13,14 +13,6 @@ numav_julia incorporates components from the following third-party projects:
   * Eigen - <https://gitlab.com/libeigen/eigen>
   - Copyright: The Eigen Authors, listed in: https://libeigen.gitlab.io/
   - License: MPL-2.0
-
-  * fmt - <https://github.com/fmtlib/fmt>
-  - Copyright: Victor Zverovich and fmt contributors
-  - License: MIT
-
-  * spdlog - <https://github.com/gabime/spdlog>
-  - Copyright: Gabi Melman and spdlog contributors
-  - License: MIT
   
   * libcxxwrap-julia - <https://github.com/JuliaInterop/libcxxwrap-julia>
   - Copyright: Bart Janssens

@@ -52,8 +52,3 @@
 
 # Yggdrasil
 Yggdrasil
-
-# third-party
-/third-party/eigen3
-/third-party/fmt
-/third-party/spdlog

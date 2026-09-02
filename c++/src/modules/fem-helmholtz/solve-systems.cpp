@@ -3,7 +3,6 @@
 #include "numav/numav.hpp"
 #include "modules/fem-helmholtz/fem-helmholtz.hpp"
 #include "common/utils.hpp"
-#include "common/log.hpp"
 
 #include <cmath>
 

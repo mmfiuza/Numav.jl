@@ -2,14 +2,11 @@
 
 #include "numav/numav.hpp"
 #include "modules/fem-helmholtz/fem-helmholtz.hpp"
-#include "common/log.hpp"
 
 namespace numav {
 
 template<ElementShape S, ElementOrder O>
 SimulationFemHelmholtz<S,O>::SimulationFemHelmholtz() {
-    log::set_level();
-    log::set_pattern();
     #if NUMAV_SYSTEM_SOLVER == NUMAV_EIGEN
         _solver = std::make_unique<Eigen::SparseLU<
             Eigen::SparseMatrix<Cmplx, Eigen::ColMajor, Eigen::Index>,

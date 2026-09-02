@@ -5,14 +5,10 @@ project(numav LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(BUILD_TESTS "Build tests" OFF)
-option(BUILD_EXAMPLES "Build examples" OFF)
 option(BUILD_SHARED_LIBS "Build shared library" OFF)
-option(GDB "Build with debug symbols for gdb" OFF)
 
 # find dependencies
 find_package(Eigen3 REQUIRED)
-find_package(spdlog REQUIRED)
 
 # solver-specific configuration
 set(SOLVER "ONEMKL" CACHE STRING "The linear system solver")
@@ -49,17 +45,15 @@ target_include_directories(numav
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${CMAKE_CURRENT_SOURCE_DIR}/third-party/indicators/include
         ${CMAKE_CURRENT_SOURCE_DIR}/third-party/safe-ptr/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/third-party/fmt/include
         ${SOLVER_SPECIFIC_INCLUDE_DIRECTORIES}
 )
 
 target_compile_definitions(numav PUBLIC 
     FMT_HEADER_ONLY
-    SAFE_PTR_DEBUG
+    $<$<CONFIG:Debug>:SAFE_PTR_DEBUG> 
     EIGEN_DEFAULT_DENSE_INDEX_TYPE=int64_t
-    EIGEN_NO_DEBUG
+    $<$<NOT:$<CONFIG:Debug>>:EIGEN_NO_DEBUG>
     EIGEN_NO_AUTOMATIC_RESIZING
     EIGEN_FAST_MATH
     ${SELECTED_SOLVER_DEFINITION}
@@ -69,24 +63,21 @@ target_compile_definitions(numav PUBLIC
 
 target_link_libraries(numav PUBLIC
     Eigen3::Eigen
-    spdlog::spdlog_header_only
     ${SOLVER_SPECIFIC_LINK_LIBRARIES}
 )
 
 # set numav's compile and link flags
-set(NUMAV_COMPILER_FLAGS -Wall -Wextra)
-set(NUMAV_LINKER_FLAGS)
-if(NOT GDB)
-    set(NUMAV_COMPILER_FLAGS ${NUMAV_COMPILER_FLAGS} -O3)
-    set(NUMAV_LINKER_FLAGS ${NUMAV_LINKER_FLAGS} -flto)
-else()
-    set(NUMAV_COMPILER_FLAGS ${NUMAV_COMPILER_FLAGS} -g -O0 -fno-inline)
-endif()
-if(BIND_JULIA)
-    set(NUMAV_COMPILER_FLAGS ${NUMAV_COMPILER_FLAGS} -fPIC)
-endif()
-target_compile_options(numav PRIVATE ${NUMAV_COMPILER_FLAGS})
-target_link_options(numav PRIVATE ${NUMAV_LINKER_FLAGS})
+target_compile_options(numav PRIVATE
+    -Wall -Wextra
+    $<$<CONFIG:Debug>:-g -O0 -fno-inline>
+    $<$<CONFIG:Release>:-O3>
+    $<$<CONFIG:RelWithDebInfo>:-O2 -g> # Release with symbols
+    $<$<CONFIG:MinSizeRel>:-Os> # Minimum size
+    $<$<BOOL:${BIND_JULIA}>:-fPIC>
+)
+target_link_options(numav PRIVATE
+    $<$<NOT:$<CONFIG:Debug>>:-flto> # LTO for everything except Debug
+)
 
 if(BIND_JULIA)
     find_package(JlCxx REQUIRED)
@@ -102,9 +93,4 @@ if(BIND_JULIA)
         JlCxx::cxxwrap_julia_stl
     )
     install(TARGETS numav_julia LIBRARY DESTINATION lib)
-endif()
-
-# add subdirectories
-if(BUILD_TESTS)
-    add_subdirectory(tests)
 endif()
