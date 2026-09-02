@@ -64,7 +64,6 @@ public:
 
     void _allocate_a();
     void _allocate_b();
-    // void _allocate_x();
     void _assemble_fi_part_for_point_velocity();
     void _assemble_fi_part_for_sfc_velocity();
     void _assemble_fi_part_for_sfc_impedance();
