@@ -14,7 +14,7 @@ Assembles and solves the system of equations for all frequencies in the defined 
 ---
 # Output format
 
-Results are exported as files in the [HDF5 format](https://www.hdfgroup.org/solutions/hdf5/) (`.h5`). It contains all the results and passed inputs to setup the simulation. To read the results, it is recommended to use [HDF5.jl](https://juliaio.github.io/HDF5.jl/stable/) or [HDFView](https://www.hdfgroup.org/download-hdfview/).
+Results are exported as files in the [HDF5 format](https://www.hdfgroup.org/solutions/hdf5/) (`.h5`). To read it, it is recommended to use [HDF5.jl](https://juliaio.github.io/HDF5.jl/stable/) or [HDFView](https://www.hdfgroup.org/download-hdfview/).
 
 !!! tip
 
