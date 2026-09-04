@@ -32,7 +32,7 @@ function test(linear_or_quadratic::String)
     elseif linear_or_quadratic == "quadratic"
         ord = Quadratic
     end
-    f(x) = x
+    f(x) = x * (1 + 1im)
     # simulate
     s = create_simulation(
         numerical_method = Fem,
