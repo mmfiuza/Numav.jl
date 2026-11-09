@@ -52,3 +52,7 @@
 
 # Yggdrasil
 Yggdrasil
+
+# Julia manifest
+**/Manifest-v*.toml
+**/Manifest.toml
