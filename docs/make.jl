@@ -15,6 +15,7 @@ Documenter.makedocs(
     format = Documenter.HTML(
         assets = ["assets/custom.css"],
         prettyurls = false,
+        canonical = "https://mmfiuza.github.io/Numav.jl",
     ),
     pages = [
         "Home" => "index.md",
