@@ -1,4 +1,4 @@
-Assembles and solves the system of equations for all frequencies in the defined range while writing the results to the specified export path during the solution.
+Assembles and solves the system of equations for all frequencies in the defined range while writing the results to the specified export path during the solution. The exported file contains the [complex pressure amplitude](@ref "Complex amplitudes") of all nodes for all frequencies.
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
@@ -14,7 +14,7 @@ Assembles and solves the system of equations for all frequencies in the defined 
 ---
 # Output format
 
-Results are exported as files in the [HDF5 format](https://www.hdfgroup.org/solutions/hdf5/) (`.h5`). To read it, it is recommended to use [HDF5.jl](https://juliaio.github.io/HDF5.jl/stable/) or [HDFView](https://www.hdfgroup.org/download-hdfview/).
+Results are exported as files in the [HDF5 format](https://www.hdfgroup.org/solutions/hdf5/) (`.h5`).
 
 !!! tip
 
@@ -24,3 +24,4 @@ Results are exported as files in the [HDF5 format](https://www.hdfgroup.org/solu
     r = h5open("result.h5", "r")
     # inspect contents
     ```
+    Alternatively, [HDFView](https://www.hdfgroup.org/download-hdfview/) can be used to check the results in a graphical interface.

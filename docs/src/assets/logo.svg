@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="102" height="102" viewBox="0 0 102 102">
+<path fill-rule="nonzero" fill="rgb(79.6%, 23.5%, 20%)" fill-opacity="1" d="M 1 101 L 36.355469 39.761719 L 30.289062 1 Z M 1 101 "/>
+<path fill-rule="nonzero" fill="rgb(58.4%, 34.5%, 69.8%)" fill-opacity="1" d="M 36.355469 39.761719 L 30.289062 1 L 65.644531 62.238281 Z M 36.355469 39.761719 "/>
+<path fill-rule="nonzero" fill="rgb(22%, 59.6%, 14.9%)" fill-opacity="1" d="M 36.355469 39.761719 L 71.710938 101 L 65.644531 62.238281 Z M 36.355469 39.761719 "/>
+<path fill-rule="nonzero" fill="rgb(25.1%, 38.8%, 84.7%)" fill-opacity="1" d="M 71.710938 101 L 101 1 L 65.644531 62.238281 Z M 71.710938 101 "/>
+<path fill="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter" stroke="rgb(0%, 0%, 0%)" stroke-opacity="1" stroke-miterlimit="10" d="M 1 101 L 36.355469 39.761719 "/>
+<path fill="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter" stroke="rgb(0%, 0%, 0%)" stroke-opacity="1" stroke-miterlimit="10" d="M 36.355469 39.761719 L 30.289062 1 "/>
+<path fill="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter" stroke="rgb(0%, 0%, 0%)" stroke-opacity="1" stroke-miterlimit="10" d="M 36.355469 39.761719 L 71.710938 101 "/>
+<path fill="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter" stroke="rgb(0%, 0%, 0%)" stroke-opacity="1" stroke-miterlimit="10" d="M 30.289062 1 L 1 101 "/>
+<path fill="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter" stroke="rgb(0%, 0%, 0%)" stroke-opacity="1" stroke-miterlimit="10" d="M 36.355469 39.761719 L 65.644531 62.238281 "/>
+<path fill="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter" stroke="rgb(0%, 0%, 0%)" stroke-opacity="1" stroke-miterlimit="10" d="M 30.289062 1 L 65.644531 62.238281 "/>
+<path fill="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter" stroke="rgb(0%, 0%, 0%)" stroke-opacity="1" stroke-miterlimit="10" d="M 71.710938 101 L 101 1 "/>
+<path fill="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter" stroke="rgb(0%, 0%, 0%)" stroke-opacity="1" stroke-miterlimit="10" d="M 71.710938 101 L 65.644531 62.238281 "/>
+<path fill="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter" stroke="rgb(0%, 0%, 0%)" stroke-opacity="1" stroke-miterlimit="10" d="M 101 1 L 65.644531 62.238281 "/>
+</svg>

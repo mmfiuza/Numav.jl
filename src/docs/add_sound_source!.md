@@ -1,4 +1,4 @@
-Adds sound sources either at a specific point in space (via `coordinates`) or over a surface region (via `physical_group`). Three excitation types are supported: `volume_velocity`, `particle velocity`, and `pressure`.
+Adds sound sources either at a specific point in space (via `coordinates`) or over a surface region (via `physical_group`). Three excitation types are supported: `volume_velocity`, `particle velocity`, and `pressure`. Sign conventions are explained [here](@ref "Conventions").
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|

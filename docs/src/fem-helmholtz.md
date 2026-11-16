@@ -1,6 +1,6 @@
 # FEM-Helmholtz
 
-This section explains how Numav can perform acoustic simulations based on the Helmholtz equation.
+This section explains how Numav can perform FEM simulations based on the Helmholtz equation using subparametric elements.
 
 ## Quick start
 

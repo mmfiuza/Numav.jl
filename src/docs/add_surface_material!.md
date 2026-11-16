@@ -1,6 +1,6 @@
 Assigns a specific acoustic impedance boundary condition to a surface in the mesh. This is used to model absorbers, reflecting surfaces or other boundary treatments.
 
-The specific acoustic impedance is the ratio of complex amplitude of acoustic pressure to complex amplitude of normal particle velocity (in Pa·s/m).
+The specific acoustic impedance is the ratio of complex amplitude of acoustic pressure to complex amplitude of normal particle velocity (in Pa·s/m). Sign conventions are explained [here](@ref "Conventions").
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
