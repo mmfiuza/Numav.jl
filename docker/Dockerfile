@@ -71,9 +71,12 @@ RUN case "$(uname -m)" in \
         aarch64)   JULIAUP_ARCH="aarch64" ;; \
         *)         echo "Unsupported arch: $(uname -m)" && exit 1 ;; \
     esac && \
-curl -fsSL "https://github.com/JuliaLang/juliaup/releases/download/\
+curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors -o /tmp/juliaup.tar.gz \
+"https://github.com/JuliaLang/juliaup/releases/download/\
 v${JULIAUP_VERSION}/juliaup-${JULIAUP_VERSION}-${JULIAUP_ARCH}\
--unknown-linux-musl-portable.tar.gz" | tar -xz -C /usr/local/bin
+-unknown-linux-musl-portable.tar.gz" && \
+tar -xzf /tmp/juliaup.tar.gz -C /usr/local/bin && \
+rm /tmp/juliaup.tar.gz
 RUN juliaup add release
 RUN juliaup default release
 RUN juliaup add 1.10
@@ -90,7 +93,8 @@ RUN julia +release -e 'using Pkg; Pkg.add([ \
     PackageSpec(name="Revise"), \
     PackageSpec(name="HDF5"), \
     PackageSpec(name="Documenter"), \
-    PackageSpec(name="LiveServer") \
+    PackageSpec(name="LiveServer"), \
+    PackageSpec(name="Luxor") \
 ])'
 RUN julia +${BINARY_BUILDER_JULIA_VERSION} -e "using Pkg; Pkg.add([ \
     PackageSpec(name=\"BinaryBuilder\",version=\"${BINARY_BUILDER_VERSION}\"),\
