@@ -108,13 +108,16 @@ Follow these steps in order.
 
 **1. Build the JLL for local testing.** From the root of the repository, run the recipe in Yggdrasil with the `--deploy-jll=local` option:
 ```
-rm -rf build && rm -rf install && rm -rf products && julia +1.12.4 \
+rm -rf build && rm -rf install && rm -rf products &&
+JULIA_TARGET=$(julia +release -e \
+'print("$(VERSION.major).$(VERSION.minor).0")') &&
+julia +1.12.4 \
 /workspace/Yggdrasil/N/numav_julia/build_tarballs.jl \
---deploy-jll=local x86_64-linux-gnu-julia_version+1.12.0
+--deploy-jll=local x86_64-linux-gnu-julia_version+$JULIA_TARGET
 ```
 This builds `numav_julia_jll` and deploys it locally, without registering or publishing anything. The package is placed in `/usr/local/share/julia/dev/numav_julia_jll`.
 
-**2. Dev the Julia packages.** In the package manager, `dev` both the local JLL and `Numav.jl`:
+**2. Dev the Julia packages.** In the package manager, `dev` both the local JLL and `Numav.jl`.
 ```
 dev /usr/local/share/julia/dev/numav_julia_jll
 dev /workspace
@@ -129,6 +132,11 @@ julia c++/generate_override.jl
 ```
 rm -rf build &&
 rm -rf c++/override/lib &&
+JLCXX_PREFIX=$(julia -e '
+numav = Base.identify_package("Numav")
+cxxwrap = Base.identify_package(numav, "CxxWrap")
+CxxWrap = Base.require(cxxwrap)
+print(CxxWrap.prefix_path())') &&
 cmake c++ -B build \
 -D CMAKE_BUILD_TYPE=Release \
 -D SOLVER=ONEMKL \
@@ -136,13 +144,13 @@ cmake c++ -B build \
 -D CMAKE_INSTALL_PREFIX=c++/override \
 -D CMAKE_PREFIX_PATH="\
 /opt/intel/oneapi/mkl/2025.2/lib/cmake;\
-/usr/local/share/julia/artifacts/6d260b2393efd5030d726537e5efe3573d0fbd28" &&
+$JLCXX_PREFIX" &&
 cmake --build build --parallel $(nproc) &&
 cmake --install ./build
 ```
-The second entry of `CMAKE_PREFIX_PATH` points to a Julia artifact directory. If the hash in that path does not exist on your machine, adjust it to the artifact directory that was installed in your environment.
+The second entry of `CMAKE_PREFIX_PATH` is the directory of `libcxxwrap_julia`, which contains the `JlCxx` CMake package. It is a Julia artifact, so its path may change between versions of Julia or of the library. For this reason, it is obtained with [`CxxWrap.prefix_path()`](https://github.com/JuliaInterop/CxxWrap.jl#compiling-the-c-code).
 
-From now on, whenever you change the C++ code, repeat step 4 to rebuild and reinstall `libnumav_julia`. Steps 1 to 3 only need to be repeated if the recipe or the JLL itself changes.
+From now on, whenever you change the C++ code, repeat step 4 to rebuild and reinstall `libnumav_julia`. Steps 1 to 3 only need to be repeated if the recipe or the JLL itself changes, or if the `release` channel moves to a new minor version of Julia.
 
 ## Documentation
 
