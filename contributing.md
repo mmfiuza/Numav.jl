@@ -200,3 +200,15 @@ The comment will trigger [@JuliaRegistrator](https://github.com/JuliaRegistrator
 3. When the pull request is merged, Yggdrasil's automated build process builds the binaries for all supported platforms and registers the new `numav_julia_jll` version in the General registry.
 
 Remember that the version number of the JLL is independent of the version number of `Numav.jl`, so do not try to keep them equal.
+
+## To do
+
+- Add checks to improve the robustness of the `.bdf` reader. Check for poorly formatted files or impossible mesh configurations.
+- Create a function called `plot_pressure`. It should show the SPL curve along frequency at some chosen point.
+- Create two functions: `plot_surface_regions` and `plot_volume_regions`. They should show the mesh indicating visually all the regions, grouping by color or any other visual manner. The number of each region must be clear.
+- Create a change log, probably somewhere in the documentation page.
+- Add option to plot real part, imaginary part and phase in `plot_pressure_field`.
+- Add dark mode plots.
+- Make `set_frequency!` accept a logarithmic option of `sampling_density`. This will make graphs with a logarithmic frequency scale show equally spaced points.
+- Make point volume velocity sound sources be split into all 4 closest points. Currently, Numav only applies the source to the closest node, like if the source was exactly on it.
+- Check if points given by the users are outside the simulation domain.
