@@ -15,9 +15,9 @@ function _check_if_it_can_run(s::SimulationFemHelmholtz)
         error("Simulation frequency was not defined." *
               " Call set_maximum_frequency! to do so.")
     end
-    for evpg in s._existing_evpg
-        if !haskey(s._evpg_ivpg_bimap, evpg)
-            error("Volume physical group $evpg was not assigned." *
+    for evr in s._existing_evr
+        if !haskey(s._evr_ivr_bimap, evr)
+            error("Volume region $evr was not assigned." *
                   " Call add_volume_material! to do so.")
         end
     end
@@ -51,10 +51,10 @@ end
 function run!(s::SimulationFemHelmholtz)
     _check_if_it_can_run(s)
 
-    _organize_volume_physical_group_data!(s)
-    _organize_impedance_physical_group_data!(s)
-    _organize_velocity_physical_group_data!(s)
-    _organize_pressure_physical_group_data!(s)
+    _organize_volume_region_data!(s)
+    _organize_impedance_region_data!(s)
+    _organize_velocity_region_data!(s)
+    _organize_pressure_region_data!(s)
     _write_pq_matrices(s)
 
     file, pressure_dataset = _begin_hdf5_file(s)
@@ -87,27 +87,27 @@ function run!(s::SimulationFemHelmholtz)
         s._ni_count,
         # volume materials
         UInt64.(vec(s._vei_to_ni) .- 1),
-        UInt64.(s._vei_to_ivpg .- 1),
+        UInt64.(s._vei_to_ivr .- 1),
         s._vei_count,
-        vec(s._ivpg_to_density_values),
-        vec(s._ivpg_to_soundspeed_values),
-        s._ivpg_count,
+        vec(s._ivr_to_density_values),
+        vec(s._ivr_to_soundspeed_values),
+        s._ivr_count,
         # surface materials
         UInt64.(vec(s._isei_to_ni) .- 1),
-        UInt64.(s._isei_to_ispgi .- 1),
+        UInt64.(s._isei_to_isri .- 1),
         s._isei_count,
-        vec(s._ispgi_to_impedance_values),
-        s._ispgi_count,
+        vec(s._isri_to_impedance_values),
+        s._isri_count,
         # volume velocity
         UInt64.(s._vpi_to_ni .- 1),
         vec(s._vpi_to_volvel_values),
         s._vpi_count,
         # surface velocity
         UInt64.(vec(s._vsei_to_ni) .- 1),
-        UInt64.(s._vsei_to_ispgv .- 1),
+        UInt64.(s._vsei_to_isrv .- 1),
         s._vsei_count,
-        vec(s._ispgv_to_velocity_values),
-        s._ispgv_count,
+        vec(s._isrv_to_velocity_values),
+        s._isrv_count,
         # pressure
         UInt64.(s._pni_to_ni .- 1),
         s._pni_count,

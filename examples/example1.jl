@@ -20,16 +20,16 @@ load_mesh!(s, mesh_path)
 # Define air
 rho0 = 1.2
 c0= 343
-add_volume_material!(s, physical_group=1, density=rho0, speed_of_sound=c0)
+add_volume_material!(s, region=1, density=rho0, speed_of_sound=c0)
 
 # Define material as an equivalent fluid
 rho1 = 1 - 1im
 c1 = 400 + 400im
-add_volume_material!(s, physical_group=2, density=rho1, speed_of_sound=c1)
+add_volume_material!(s, region=2, density=rho1, speed_of_sound=c1)
 
 # Add a surface impedance boundary condition
 Zs = 4000 + 4000im
-add_surface_material!(s, physical_group=11, specific_acoustic_impedance=Zs)
+add_surface_material!(s, region=11, specific_acoustic_impedance=Zs)
 
 # Add a monopole volume velocity source at a point
 Q(f) = 0.01/f
@@ -37,7 +37,7 @@ add_sound_source!(s, coordinates=[0.0, 5.0, 0.0], volume_velocity=Q)
 
 # Add a particle velocity source on a surface
 U(f) = 0.015/f
-add_sound_source!(s, physical_group=10, particle_velocity=U)
+add_sound_source!(s, region=10, particle_velocity=U)
 
 # Add pressure source
 P(f) = 0.002f

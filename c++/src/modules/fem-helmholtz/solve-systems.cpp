@@ -44,43 +44,43 @@ void SimulationFemHelmholtz<S,O>::_solve_systems()
         }
 
         // add surface velocity to b vector
-        for (uint64_t ispgv = 0UL; ispgv != _ispgv_count; ++ispgv)
+        for (uint64_t isrv = 0UL; isrv != _isrv_count; ++isrv)
         {
-            const Cmplx velocity = _ispgv_to_velocity[fi*_ispgv_count + ispgv];
+            const Cmplx velocity = _isrv_to_velocity[fi*_isrv_count + isrv];
             const Cmplx fd_part = Cmplx(0_F, omega) * velocity;
-            const uint64_t fipi_count = _ispgv_to_ptr_in_b[ispgv].size();
+            const uint64_t fipi_count = _isrv_to_ptr_in_b[isrv].size();
             for (uint64_t fipi = 0UL; fipi != fipi_count; ++fipi) {
-                *_ispgv_to_ptr_in_b[ispgv][fipi] +=
-                    _ispgv_to_forc_fi_part[ispgv][fipi] * fd_part;
+                *_isrv_to_ptr_in_b[isrv][fipi] +=
+                    _isrv_to_forc_fi_part[isrv][fipi] * fd_part;
             }
         }
 
         // add damping matrix to a
-        for (uint64_t ispgi = 0UL; ispgi != _ispgi_count; ++ispgi)
+        for (uint64_t isri = 0UL; isri != _isri_count; ++isri)
         {
-            const Cmplx impedance = _ispgi_to_impedance[fi*_ispgi_count+ispgi];
+            const Cmplx impedance = _isri_to_impedance[fi*_isri_count+isri];
             const Cmplx damp_fd_part = Cmplx(0_F, omega) / impedance;
-            const uint64_t fipi_count = _ispgi_to_ptr_in_a[ispgi].size();
+            const uint64_t fipi_count = _isri_to_ptr_in_a[isri].size();
             for (uint64_t fipi = 0UL; fipi != fipi_count; ++fipi) {
-                *_ispgi_to_ptr_in_a[ispgi][fipi] +=
-                    _ispgi_to_damp_fi_part[ispgi][fipi] * damp_fd_part;
+                *_isri_to_ptr_in_a[isri][fipi] +=
+                    _isri_to_damp_fi_part[isri][fipi] * damp_fd_part;
             }
         }
 
         // add stiffness and mass matrix to a
-        for (uint64_t ivpg = 0UL; ivpg != _ivpg_count; ++ivpg)
+        for (uint64_t ivr = 0UL; ivr != _ivr_count; ++ivr)
         {
-            const Cmplx density = _ivpg_to_density[fi*_ivpg_count + ivpg];
-            const Cmplx soundspeed = _ivpg_to_soundspeed[fi*_ivpg_count+ivpg];
+            const Cmplx density = _ivr_to_density[fi*_ivr_count + ivr];
+            const Cmplx soundspeed = _ivr_to_soundspeed[fi*_ivr_count+ivr];
             const Cmplx stif_fd_part = Cmplx(1_F, 0_F) / density;
             const Cmplx mass_fd_part =
                 omega_squared / (density * soundspeed * soundspeed);
             
-            const uint64_t fipi_count = _ivpg_to_ptr_in_a[ivpg].size();
+            const uint64_t fipi_count = _ivr_to_ptr_in_a[ivr].size();
             for (uint64_t fipi = 0UL; fipi != fipi_count; ++fipi) {
-                *_ivpg_to_ptr_in_a[ivpg][fipi] +=
-                    _ivpg_to_stif_fi_part[ivpg][fipi] * stif_fd_part +
-                    _ivpg_to_mass_fi_part[ivpg][fipi] * mass_fd_part;
+                *_ivr_to_ptr_in_a[ivr][fipi] +=
+                    _ivr_to_stif_fi_part[ivr][fipi] * stif_fd_part +
+                    _ivr_to_mass_fi_part[ivr][fipi] * mass_fd_part;
             }
         }
 

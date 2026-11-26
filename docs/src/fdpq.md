@@ -23,7 +23,7 @@ rho(f) = 1.2 + 0.01im*f
 # anonymous function
 f -> 343.0 + 0.05 * sqrt(f)
 
-add_volume_material!(s, physical_group=1, density=c, speed_of_sound=rho)
+add_volume_material!(s, region=1, density=c, speed_of_sound=rho)
 ```
 
 ## 2. Constant
@@ -47,7 +47,7 @@ A `String` containing the path to a plain-text CSV-like file with three columns:
 ```
 
 ```julia
-add_sound_source!(s, physical_group=1, pressure="data/pressure.txt")
+add_sound_source!(s, region=1, pressure="data/pressure.txt")
 ```
 
 The file format rules are:

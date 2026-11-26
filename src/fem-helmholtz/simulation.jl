@@ -21,10 +21,10 @@ using Bijections: Bijection
     _isei_count::Int = 0
     _vsei_count::Int = 0
     _psei_count::Int = 0
-    _ivpg_count::Int = 0
-    _ispgi_count::Int = 0
-    _ispgp_count::Int = 0
-    _ispgv_count::Int = 0
+    _ivr_count::Int = 0
+    _isri_count::Int = 0
+    _isrp_count::Int = 0
+    _isrv_count::Int = 0
     _vpi_count::Int = 0
     _ppi_count::Int = 0
     _pni_count::Int = 0
@@ -33,38 +33,38 @@ using Bijections: Bijection
     _ni_to_xyz::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)
     _sei_to_ni::Matrix{Int} = Matrix{Int}(undef, 0, 0)
     _vei_to_ni::Matrix{Int} = Matrix{Int}(undef, 0, 0)
-    _sei_to_espg::Vector{Int} = []
-    _vei_to_evpg::Vector{Int} = []
+    _sei_to_esr::Vector{Int} = []
+    _vei_to_evr::Vector{Int} = []
 
-    _vei_to_ivpg::Vector{Int} = []
+    _vei_to_ivr::Vector{Int} = []
     _isei_to_ni::Matrix{Int} = Matrix{Int}(undef, 0, 0)
-    _isei_to_ispgi::Vector{Int} = []
+    _isei_to_isri::Vector{Int} = []
     _vsei_to_ni::Matrix{Int} = Matrix{Int}(undef, 0, 0)
-    _vsei_to_ispgv::Vector{Int} = []
+    _vsei_to_isrv::Vector{Int} = []
     _psei_to_ni::Matrix{Int} = Matrix{Int}(undef, 0, 0)
-    _psei_to_ispgp::Vector{Int} = []
+    _psei_to_isrp::Vector{Int} = []
 
-    _existing_evpg::Set{Int} = Set{Int}()
-    _existing_espg::Set{Int} = Set{Int}()
+    _existing_evr::Set{Int} = Set{Int}()
+    _existing_esr::Set{Int} = Set{Int}()
 
-    _evpg_ivpg_bimap::Bijection{Int,Int} = Bijection{Int,Int}()
-    _espg_ispgi_bimap::Bijection{Int,Int} = Bijection{Int,Int}()
-    _espg_ispgv_bimap::Bijection{Int,Int} = Bijection{Int,Int}()
-    _espg_ispgp_bimap::Bijection{Int,Int} = Bijection{Int,Int}()
+    _evr_ivr_bimap::Bijection{Int,Int} = Bijection{Int,Int}()
+    _esr_isri_bimap::Bijection{Int,Int} = Bijection{Int,Int}()
+    _esr_isrv_bimap::Bijection{Int,Int} = Bijection{Int,Int}()
+    _esr_isrp_bimap::Bijection{Int,Int} = Bijection{Int,Int}()
 
-    _ivpg_to_density_func::Vector{Function} = []
-    _ivpg_to_soundspeed_func::Vector{Function} = []
-    _ispgi_to_impedance_func::Vector{Function} = []
-    _ispgv_to_velocity_func::Vector{Function} = []
-    _ispgp_to_pressure_func::Vector{Function} = []
+    _ivr_to_density_func::Vector{Function} = []
+    _ivr_to_soundspeed_func::Vector{Function} = []
+    _isri_to_impedance_func::Vector{Function} = []
+    _isrv_to_velocity_func::Vector{Function} = []
+    _isrp_to_pressure_func::Vector{Function} = []
     _vpi_to_volvel_func::Vector{Function} = []
     _ppi_to_pressure_func::Vector{Function} = []
     _pvi_to_pressure_func::Vector{Function} = []
 
-    _ivpg_to_density_values::Matrix{ComplexF64} = Matrix{ComplexF64}(undef, 0, 0)
-    _ivpg_to_soundspeed_values::Matrix{ComplexF64} = Matrix{ComplexF64}(undef, 0, 0)
-    _ispgi_to_impedance_values::Matrix{ComplexF64} = Matrix{ComplexF64}(undef, 0, 0)
-    _ispgv_to_velocity_values::Matrix{ComplexF64} = Matrix{ComplexF64}(undef, 0, 0)
+    _ivr_to_density_values::Matrix{ComplexF64} = Matrix{ComplexF64}(undef, 0, 0)
+    _ivr_to_soundspeed_values::Matrix{ComplexF64} = Matrix{ComplexF64}(undef, 0, 0)
+    _isri_to_impedance_values::Matrix{ComplexF64} = Matrix{ComplexF64}(undef, 0, 0)
+    _isrv_to_velocity_values::Matrix{ComplexF64} = Matrix{ComplexF64}(undef, 0, 0)
     _vpi_to_volvel_values::Matrix{ComplexF64} = Matrix{ComplexF64}(undef, 0, 0)
     _pvi_to_pressure_values::Matrix{ComplexF64} = Matrix{ComplexF64}(undef, 0, 0)
 
