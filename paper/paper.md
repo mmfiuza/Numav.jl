@@ -12,7 +12,7 @@ authors:
     orcid: 0000-0002-5572-1935
     affiliation: 1
   - name: Pedro Paulo Calmon Paes
-    orcid: ????-????-????-????
+    orcid: 0009-0002-8127-286X
     affiliation: 1
 affiliations:
  - name: Federal University of Santa Maria (UFSM), Brazil
