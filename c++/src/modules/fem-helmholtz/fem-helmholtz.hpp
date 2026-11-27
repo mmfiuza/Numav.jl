@@ -93,34 +93,34 @@ public:
     fz::SafePtr<const std::array<Float, DIM>> _ni_to_xyz;
 
     fz::SafePtr<const std::array<uint64_t, ENIV_COUNT<S,O>>> _vei_to_ni;
-    fz::SafePtr<const uint64_t> _vei_to_ivpg;
-    fz::SafePtr<const Cmplx> _ivpg_to_density;
-    fz::SafePtr<const Cmplx> _ivpg_to_soundspeed;
+    fz::SafePtr<const uint64_t> _vei_to_ivr;
+    fz::SafePtr<const Cmplx> _ivr_to_density;
+    fz::SafePtr<const Cmplx> _ivr_to_soundspeed;
 
     fz::SafePtr<const std::array<uint64_t, ENIS_COUNT<S,O>>> _isei_to_ni;
-    fz::SafePtr<const uint64_t> _isei_to_ispgi;
-    fz::SafePtr<const Cmplx> _ispgi_to_impedance;
+    fz::SafePtr<const uint64_t> _isei_to_isri;
+    fz::SafePtr<const Cmplx> _isri_to_impedance;
 
     fz::SafePtr<const uint64_t> _vpi_to_ni;
     fz::SafePtr<const Cmplx> _vpi_to_volvel;
 
     fz::SafePtr<const std::array<uint64_t, ENIS_COUNT<S,O>>> _vsei_to_ni;
-    fz::SafePtr<const uint64_t> _vsei_to_ispgv;
-    fz::SafePtr<const Cmplx> _ispgv_to_velocity;
+    fz::SafePtr<const uint64_t> _vsei_to_isrv;
+    fz::SafePtr<const Cmplx> _isrv_to_velocity;
     
     fz::SafePtr<const uint64_t> _pni_to_ni;
     fz::SafePtr<const uint64_t> _pvi_to_pni_count;
     fz::SafePtr<const Cmplx> _pvi_to_pressure;
 
     fz::SafePtr<std::pair<uint64_t, uint64_t>> _ni_connections;
-    fz::SafePtr<fz::SafePtr<Float>> _ivpg_to_stif_fi_part;
-    fz::SafePtr<fz::SafePtr<Float>> _ivpg_to_mass_fi_part;
-    fz::SafePtr<fz::SafePtr<Cmplx*>> _ivpg_to_ptr_in_a;
-    fz::SafePtr<fz::SafePtr<Float>> _ispgi_to_damp_fi_part;
-    fz::SafePtr<fz::SafePtr<Cmplx*>> _ispgi_to_ptr_in_a;
+    fz::SafePtr<fz::SafePtr<Float>> _ivr_to_stif_fi_part;
+    fz::SafePtr<fz::SafePtr<Float>> _ivr_to_mass_fi_part;
+    fz::SafePtr<fz::SafePtr<Cmplx*>> _ivr_to_ptr_in_a;
+    fz::SafePtr<fz::SafePtr<Float>> _isri_to_damp_fi_part;
+    fz::SafePtr<fz::SafePtr<Cmplx*>> _isri_to_ptr_in_a;
     fz::SafePtr<Cmplx*> _vpi_to_ptr_in_b;
-    fz::SafePtr<fz::SafePtr<Float>> _ispgv_to_forc_fi_part;
-    fz::SafePtr<fz::SafePtr<Cmplx*>> _ispgv_to_ptr_in_b;
+    fz::SafePtr<fz::SafePtr<Float>> _isrv_to_forc_fi_part;
+    fz::SafePtr<fz::SafePtr<Cmplx*>> _isrv_to_ptr_in_b;
     fz::SafePtr<fz::SafePtr<Cmplx*>> _pvi_to_ptr_in_a;
     fz::SafePtr<fz::SafePtr<Cmplx*>> _pvi_to_ptr_in_b;
     fz::SafePtr<Cmplx> _a_vals;
@@ -134,10 +134,10 @@ public:
     uint64_t _isei_count;
     uint64_t _vsei_count;
     uint64_t _psei_count;
-    uint64_t _ivpg_count;
-    uint64_t _ispgi_count;
-    uint64_t _ispgp_count;
-    uint64_t _ispgv_count;
+    uint64_t _ivr_count;
+    uint64_t _isri_count;
+    uint64_t _isrp_count;
+    uint64_t _isrv_count;
     uint64_t _vpi_count;
     uint64_t _pni_count;
     uint64_t _pvi_count;

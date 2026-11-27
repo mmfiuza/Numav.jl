@@ -146,57 +146,57 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_vol_elements()
         > ENI_PAIRS = COMBINATION_REP<ENIV_COUNT<S,O>>;
     #endif
 
-    // count the fipi for each ivpg
+    // count the fipi for each ivr
     fz::SafePtr<std::unordered_map<
         std::pair<uint64_t,uint64_t>, uint64_t
-    >> ivpg_to_map_to_fipi(_ivpg_count);
+    >> ivr_to_map_to_fipi(_ivr_count);
     for (uint64_t vei = 0UL; vei != _vei_count; ++vei)
     {
-        const uint64_t ivpg = _vei_to_ivpg[vei];
+        const uint64_t ivr = _vei_to_ivr[vei];
         for (const auto& eni : ENI_PAIRS) {
             const std::pair<uint64_t,uint64_t> pair = make_ordered_rowcol_pair(
                 _vei_to_ni[vei][eni[0UL]], _vei_to_ni[vei][eni[1UL]]
             );
-            if (!(ivpg_to_map_to_fipi[ivpg].count(pair) > 0)) {
-                const uint64_t fipi = ivpg_to_map_to_fipi[ivpg].size();
-                ivpg_to_map_to_fipi[ivpg].insert({pair, fipi});
+            if (!(ivr_to_map_to_fipi[ivr].count(pair) > 0)) {
+                const uint64_t fipi = ivr_to_map_to_fipi[ivr].size();
+                ivr_to_map_to_fipi[ivr].insert({pair, fipi});
             }
         }
     }
 
     // allocate memory in the safe pointers
-    _ivpg_to_stif_fi_part = fz::SafePtr<fz::SafePtr<Float>>(_ivpg_count);
-    _ivpg_to_mass_fi_part = fz::SafePtr<fz::SafePtr<Float>>(_ivpg_count);
-    _ivpg_to_ptr_in_a = fz::SafePtr<fz::SafePtr<Cmplx*>>(_ivpg_count);
-    for (uint64_t ivpg = 0UL; ivpg != _ivpg_count; ++ivpg)
+    _ivr_to_stif_fi_part = fz::SafePtr<fz::SafePtr<Float>>(_ivr_count);
+    _ivr_to_mass_fi_part = fz::SafePtr<fz::SafePtr<Float>>(_ivr_count);
+    _ivr_to_ptr_in_a = fz::SafePtr<fz::SafePtr<Cmplx*>>(_ivr_count);
+    for (uint64_t ivr = 0UL; ivr != _ivr_count; ++ivr)
     {
-        const uint64_t size = ivpg_to_map_to_fipi[ivpg].size();
-        _ivpg_to_stif_fi_part[ivpg] = fz::SafePtr<Float>(size);
-        _ivpg_to_stif_fi_part[ivpg].fill(0_F);
-        _ivpg_to_mass_fi_part[ivpg] = fz::SafePtr<Float>(size);
-        _ivpg_to_mass_fi_part[ivpg].fill(0_F);
-        _ivpg_to_ptr_in_a[ivpg] = fz::SafePtr<Cmplx*>(size);
+        const uint64_t size = ivr_to_map_to_fipi[ivr].size();
+        _ivr_to_stif_fi_part[ivr] = fz::SafePtr<Float>(size);
+        _ivr_to_stif_fi_part[ivr].fill(0_F);
+        _ivr_to_mass_fi_part[ivr] = fz::SafePtr<Float>(size);
+        _ivr_to_mass_fi_part[ivr].fill(0_F);
+        _ivr_to_ptr_in_a[ivr] = fz::SafePtr<Cmplx*>(size);
     }
 
     // assemble elemental stiffness and mass matrices
     std::array<uint64_t, ENI_PAIRS.size()> fipi_vol;
     for (uint64_t vei = 0UL; vei != _vei_count; ++vei)
     {
-        const uint64_t ivpg = _vei_to_ivpg[vei];
+        const uint64_t ivr = _vei_to_ivr[vei];
         
-        // Create _ivpg_to_ptr_in_a
+        // Create _ivr_to_ptr_in_a
         for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci)
         {
             const std::pair<uint64_t,uint64_t> pair = make_ordered_rowcol_pair(
                 _vei_to_ni[vei][ENI_PAIRS[nci][0UL]],
                 _vei_to_ni[vei][ENI_PAIRS[nci][1UL]]
             );
-            fipi_vol[nci] = ivpg_to_map_to_fipi[ivpg].at(pair);
+            fipi_vol[nci] = ivr_to_map_to_fipi[ivr].at(pair);
 
             #if NUMAV_SYSTEM_SOLVER == NUMAV_INTERNAL
                 if(pair.first == pair.second) {
                     const uint64_t ni = pair.first;
-                    _ivpg_to_ptr_in_a[ivpg][fipi_vol[nci]] =
+                    _ivr_to_ptr_in_a[ivr][fipi_vol[nci]] =
                         _a_diag.data() + ni;
                     continue;
                 }
@@ -210,7 +210,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_vol_elements()
                 compare_pair<uint64_t>
             );
             const uint64_t ptrdiff = pair_ptr - _ni_connections.begin();
-            _ivpg_to_ptr_in_a[ivpg][fipi_vol[nci]] = _a_vals.begin() + ptrdiff;
+            _ivr_to_ptr_in_a[ivr][fipi_vol[nci]] = _a_vals.begin() + ptrdiff;
         }
         
         // coordinates matrix
@@ -262,7 +262,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_vol_elements()
                 bbt_detj_w = bbt*detj*GAUSS_WEIGHTS_VOL<S,NGP_STIF<S,O>>[gpi];
 
                 for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci) {
-                    _ivpg_to_stif_fi_part[ivpg][fipi_vol[nci]] +=
+                    _ivr_to_stif_fi_part[ivr][fipi_vol[nci]] +=
                         bbt_detj_w(ENI_PAIRS[nci][0UL], ENI_PAIRS[nci][1UL]);
                 }
             }
@@ -273,7 +273,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_vol_elements()
             stif_fi_part /= tet_volume;
 
             for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci) {
-                _ivpg_to_stif_fi_part[ivpg][fipi_vol[nci]] +=
+                _ivr_to_stif_fi_part[ivr][fipi_vol[nci]] +=
                     stif_fi_part(ENI_PAIRS[nci][0UL], ENI_PAIRS[nci][1UL]);
             }
         #endif
@@ -310,7 +310,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_vol_elements()
                 nnt_detj_w = nnt*detj*GAUSS_WEIGHTS_VOL<S,NGP_MASS<S,O>>[gpi];
                 
                 for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci) {
-                    _ivpg_to_mass_fi_part[ivpg][fipi_vol[nci]] -=
+                    _ivr_to_mass_fi_part[ivr][fipi_vol[nci]] -=
                         nnt_detj_w(ENI_PAIRS[nci][0UL], ENI_PAIRS[nci][1UL]);
                 }
             }
@@ -321,12 +321,12 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_vol_elements()
             mass_fi_part *= tet_volume;
             
             for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci) {
-                _ivpg_to_mass_fi_part[ivpg][fipi_vol[nci]] -=
+                _ivr_to_mass_fi_part[ivr][fipi_vol[nci]] -=
                     mass_fi_part(ENI_PAIRS[nci][0UL], ENI_PAIRS[nci][1UL]);
             }
         #endif
     }
-    ivpg_to_map_to_fipi.free();
+    ivr_to_map_to_fipi.free();
 }
 
 template<ElementShape S, ElementOrder O>
@@ -372,54 +372,54 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_impedance()
         > ENI_PAIRS = COMBINATION_REP<ENIS_COUNT<S,O>>;
     #endif
 
-    // count the fipi for each ispgi
+    // count the fipi for each isri
     fz::SafePtr<std::unordered_map<
         std::pair<uint64_t,uint64_t>, uint64_t
-    >> ispgi_to_map_to_fipi(_ispgi_count);
+    >> isri_to_map_to_fipi(_isri_count);
     for (uint64_t isei = 0UL; isei != _isei_count; ++isei)
     {
-        const uint64_t ispgi = _isei_to_ispgi[isei];
+        const uint64_t isri = _isei_to_isri[isei];
         for (const auto& eni : ENI_PAIRS) {
             const std::pair<uint64_t,uint64_t> pair = make_ordered_rowcol_pair(
                 _isei_to_ni[isei][eni[0UL]], _isei_to_ni[isei][eni[1UL]]
             );
-            if (!(ispgi_to_map_to_fipi[ispgi].count(pair) > 0)) {
-                const uint64_t fipi = ispgi_to_map_to_fipi[ispgi].size();
-                ispgi_to_map_to_fipi[ispgi].insert({pair, fipi});
+            if (!(isri_to_map_to_fipi[isri].count(pair) > 0)) {
+                const uint64_t fipi = isri_to_map_to_fipi[isri].size();
+                isri_to_map_to_fipi[isri].insert({pair, fipi});
             }
         }
     }
 
     // allocate memory in the safe pointers
-    _ispgi_to_damp_fi_part = fz::SafePtr<fz::SafePtr<Float>>(_ispgi_count);
-    _ispgi_to_ptr_in_a = fz::SafePtr<fz::SafePtr<Cmplx*>>(_ispgi_count);
-    for (uint64_t ispgi = 0UL; ispgi != _ispgi_count; ++ispgi)
+    _isri_to_damp_fi_part = fz::SafePtr<fz::SafePtr<Float>>(_isri_count);
+    _isri_to_ptr_in_a = fz::SafePtr<fz::SafePtr<Cmplx*>>(_isri_count);
+    for (uint64_t isri = 0UL; isri != _isri_count; ++isri)
     {
-        const uint64_t size = ispgi_to_map_to_fipi[ispgi].size();
-        _ispgi_to_damp_fi_part[ispgi] = fz::SafePtr<Float>(size);
-        _ispgi_to_damp_fi_part[ispgi].fill(0_F);
-        _ispgi_to_ptr_in_a[ispgi] = fz::SafePtr<Cmplx*>(size);
+        const uint64_t size = isri_to_map_to_fipi[isri].size();
+        _isri_to_damp_fi_part[isri] = fz::SafePtr<Float>(size);
+        _isri_to_damp_fi_part[isri].fill(0_F);
+        _isri_to_ptr_in_a[isri] = fz::SafePtr<Cmplx*>(size);
     }
 
     // assemble the elemental damping matrices
     std::array<uint64_t, ENI_PAIRS.size()> fipi_damp;
     for (uint64_t isei = 0UL; isei != _isei_count; ++isei)
     {
-        const uint64_t ispgi = _isei_to_ispgi[isei];
+        const uint64_t isri = _isei_to_isri[isei];
         
-        // Create _ispgi_to_ptr_in_a
+        // Create _isri_to_ptr_in_a
         for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci)
         {
             const std::pair<uint64_t,uint64_t> pair = make_ordered_rowcol_pair(
                 _isei_to_ni[isei][ENI_PAIRS[nci][0UL]],
                 _isei_to_ni[isei][ENI_PAIRS[nci][1UL]]
             );
-            fipi_damp[nci] = ispgi_to_map_to_fipi[ispgi].at(pair);
+            fipi_damp[nci] = isri_to_map_to_fipi[isri].at(pair);
             
             #if NUMAV_SYSTEM_SOLVER == NUMAV_INTERNAL
                 if(pair.first == pair.second) {
                     const uint64_t ni = pair.first;
-                    _ispgi_to_ptr_in_a[ispgi][fipi_damp[nci]] =
+                    _isri_to_ptr_in_a[isri][fipi_damp[nci]] =
                         _a_diag.data() + ni;
                     continue;
                 }
@@ -433,7 +433,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_impedance()
                 compare_pair<uint64_t>
             );
             const uint64_t ptrdiff = pair_ptr - _ni_connections.begin();
-            _ispgi_to_ptr_in_a[ispgi][fipi_damp[nci]] =
+            _isri_to_ptr_in_a[isri][fipi_damp[nci]] =
                 _a_vals.begin() + ptrdiff;
         }
 
@@ -481,7 +481,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_impedance()
                 nnt_detj_w = nnt*detj*GAUSS_WEIGHTS_SFC<S,NGP_DAMP<S,O>>[gpi];
                 
                 for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci) {
-                    _ispgi_to_damp_fi_part[ispgi][fipi_damp[nci]] += 
+                    _isri_to_damp_fi_part[isri][fipi_damp[nci]] += 
                         nnt_detj_w(ENI_PAIRS[nci][0UL], ENI_PAIRS[nci][1UL]);
                 }
             }
@@ -499,62 +499,62 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_impedance()
             damp_fi_part *= triangle_area;
             
             for (uint64_t nci = 0UL; nci != ENI_PAIRS.size(); ++nci) {
-                _ispgi_to_damp_fi_part[ispgi][fipi_damp[nci]] +=
+                _isri_to_damp_fi_part[isri][fipi_damp[nci]] +=
                     damp_fi_part(ENI_PAIRS[nci][0UL], ENI_PAIRS[nci][1UL]);
             }
         #else
             static_assert(false, "Invalid NUMAV_DAMP_INTEGRATION_METHOD.");
         #endif
         }
-    ispgi_to_map_to_fipi.free();
+    isri_to_map_to_fipi.free();
 }
 
 template<ElementShape S, ElementOrder O>
 void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_velocity()
 {
-    // count the fipi for each ispgv
-    fz::SafePtr<std::unordered_map<uint64_t,uint64_t>> ispgv_to_map_to_fipi(
-        _ispgv_count
+    // count the fipi for each isrv
+    fz::SafePtr<std::unordered_map<uint64_t,uint64_t>> isrv_to_map_to_fipi(
+        _isrv_count
     );
     for (uint64_t vsei = 0UL; vsei != _vsei_count; ++vsei) {
-        const uint64_t ispgv = _vsei_to_ispgv[vsei];
+        const uint64_t isrv = _vsei_to_isrv[vsei];
         for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
             const uint64_t ni = _vsei_to_ni[vsei][eni];
-            if (!(ispgv_to_map_to_fipi[ispgv].count(ni) > 0)) {
-                const uint64_t fipi = ispgv_to_map_to_fipi[ispgv].size();
-                ispgv_to_map_to_fipi[ispgv].insert({ni, fipi});
+            if (!(isrv_to_map_to_fipi[isrv].count(ni) > 0)) {
+                const uint64_t fipi = isrv_to_map_to_fipi[isrv].size();
+                isrv_to_map_to_fipi[isrv].insert({ni, fipi});
             }
         }
     }
 
     // allocate memory in the safe pointers
-    _ispgv_to_forc_fi_part = fz::SafePtr<fz::SafePtr<Float>>(_ispgv_count);
-    _ispgv_to_ptr_in_b = fz::SafePtr<fz::SafePtr<Cmplx*>>(_ispgv_count);
-    for (uint64_t ispgv = 0UL; ispgv != _ispgv_count; ++ispgv)
+    _isrv_to_forc_fi_part = fz::SafePtr<fz::SafePtr<Float>>(_isrv_count);
+    _isrv_to_ptr_in_b = fz::SafePtr<fz::SafePtr<Cmplx*>>(_isrv_count);
+    for (uint64_t isrv = 0UL; isrv != _isrv_count; ++isrv)
     {
-        const uint64_t size = ispgv_to_map_to_fipi[ispgv].size();
-        _ispgv_to_forc_fi_part[ispgv] = fz::SafePtr<Float>(size);
-        _ispgv_to_forc_fi_part[ispgv].fill(0_F);
-        _ispgv_to_ptr_in_b[ispgv] = fz::SafePtr<Cmplx*>(size);
+        const uint64_t size = isrv_to_map_to_fipi[isrv].size();
+        _isrv_to_forc_fi_part[isrv] = fz::SafePtr<Float>(size);
+        _isrv_to_forc_fi_part[isrv].fill(0_F);
+        _isrv_to_ptr_in_b[isrv] = fz::SafePtr<Cmplx*>(size);
     }
 
     // assemble elemental force vectors
     std::array<uint64_t, ENIS_COUNT<S,O>> fipi_forc;
     for (uint64_t vsei = 0UL; vsei != _vsei_count; ++vsei)
     {
-        const uint64_t ispgv = _vsei_to_ispgv[vsei];
+        const uint64_t isrv = _vsei_to_isrv[vsei];
 
-        // Create _ispgv_to_ptr_in_b
+        // Create _isrv_to_ptr_in_b
         for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni)
         {
             const uint64_t ni = _vsei_to_ni[vsei][eni];
-            fipi_forc[eni] = ispgv_to_map_to_fipi[ispgv].at(ni);
+            fipi_forc[eni] = isrv_to_map_to_fipi[isrv].at(ni);
             
             const uint64_t* const ni_ptr = std::lower_bound(
                 _b_row_idx.begin(), _b_row_idx.end(), ni
             );
             const uint64_t ptrdiff = ni_ptr - _b_row_idx.begin();
-            _ispgv_to_ptr_in_b[ispgv][fipi_forc[eni]] =
+            _isrv_to_ptr_in_b[isrv][fipi_forc[eni]] =
                 _b_vals.begin() + ptrdiff;
         }
 
@@ -599,7 +599,7 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_velocity()
                 n_detj_w = n * detj * GAUSS_WEIGHTS_SFC<S,NGP_FORC<S,O>>[gpi];
                 
                 for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
-                    _ispgv_to_forc_fi_part[ispgv][fipi_forc[eni]] +=
+                    _isrv_to_forc_fi_part[isrv][fipi_forc[eni]] +=
                         n_detj_w(eni);
                 }
             }
@@ -617,14 +617,14 @@ void SimulationFemHelmholtz<S,O>::_assemble_fi_part_for_sfc_velocity()
             forc_fi_part *= triangle_area;
             
             for (uint64_t eni = 0UL; eni != ENIS_COUNT<S,O>; ++eni) {
-                _ispgv_to_forc_fi_part[ispgv][fipi_forc[eni]] +=
+                _isrv_to_forc_fi_part[isrv][fipi_forc[eni]] +=
                     forc_fi_part(eni);
             }
         #else
             static_assert(false, "Invalid NUMAV_FORC_INTEGRATION_METHOD.");
         #endif
     }
-    ispgv_to_map_to_fipi.free();
+    isrv_to_map_to_fipi.free();
 }
 
 template<ElementShape S, ElementOrder O>

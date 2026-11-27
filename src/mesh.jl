@@ -38,8 +38,8 @@ function _load_bdf!(s::SimulationWithMesh, path_to_mesh::AbstractString)
         s._ni_to_xyz = Matrix{Float64}(undef, 3, s._ni_count)
         s._sei_to_ni = Matrix{Int}(undef, _enis_count(s), s._sei_count)
         s._vei_to_ni = Matrix{Int}(undef, _eniv_count(s), s._vei_count)
-        s._sei_to_espg = Vector{Int}(undef, s._sei_count)
-        s._vei_to_evpg = Vector{Int}(undef, s._vei_count)
+        s._sei_to_esr = Vector{Int}(undef, s._sei_count)
+        s._vei_to_evr = Vector{Int}(undef, s._vei_count)
 
         sei::Int = 1
         vei::Int = 1
@@ -56,9 +56,9 @@ function _load_bdf!(s::SimulationWithMesh, path_to_mesh::AbstractString)
                 ]
 
             elseif startswith(line, "CTRIA3  ")
-                espg = parse(Int, strip(line[17:24]))
-                push!(s._existing_espg, espg)
-                s._sei_to_espg[sei] = espg
+                esr = parse(Int, strip(line[17:24]))
+                push!(s._existing_esr, esr)
+                s._sei_to_esr[sei] = esr
                 s._sei_to_ni[1:3, sei] = [
                     parse(Int, strip(line[25:32])),
                     parse(Int, strip(line[33:40])),
@@ -67,9 +67,9 @@ function _load_bdf!(s::SimulationWithMesh, path_to_mesh::AbstractString)
                 sei += 1
 
             elseif startswith(line, "CTETRA  ")
-                evpg = parse(Int, strip(line[17:24]))
-                push!(s._existing_evpg, evpg)
-                s._vei_to_evpg[vei] = evpg
+                evr = parse(Int, strip(line[17:24]))
+                push!(s._existing_evr, evr)
+                s._vei_to_evr[vei] = evr
                 s._vei_to_ni[1:4, vei] = [
                     parse(Int, strip(line[25:32])),
                     parse(Int, strip(line[33:40])),

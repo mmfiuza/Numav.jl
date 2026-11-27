@@ -1,51 +1,51 @@
 # Copyright (c) 2026 Matheus Machado Fiuza <matheusmachadofiuza@gmail.com>
 
-function _organize_velocity_physical_group_data!(s::SimulationFemHelmholtz)
+function _organize_velocity_region_data!(s::SimulationFemHelmholtz)
     s._vsei_count = 0
     for sei in 1:s._sei_count
-        if haskey(s._espg_ispgv_bimap, s._sei_to_espg[sei])
+        if haskey(s._esr_isrv_bimap, s._sei_to_esr[sei])
             s._vsei_count += 1
         end
     end
 
     s._vsei_to_ni = Matrix{Int}(undef, _enis_count(s), s._vsei_count)
-    s._vsei_to_ispgv = Vector{Int}(undef, s._vsei_count)
+    s._vsei_to_isrv = Vector{Int}(undef, s._vsei_count)
     vsei = 0
     for sei in 1:s._sei_count
-        if haskey(s._espg_ispgv_bimap, s._sei_to_espg[sei])
+        if haskey(s._esr_isrv_bimap, s._sei_to_esr[sei])
             vsei += 1
             s._vsei_to_ni[:, vsei] = s._sei_to_ni[:, sei]
-            s._vsei_to_ispgv[vsei] = s._espg_ispgv_bimap[s._sei_to_espg[sei]]
+            s._vsei_to_isrv[vsei] = s._esr_isrv_bimap[s._sei_to_esr[sei]]
         end
     end
     return nothing
 end
 
-function _organize_pressure_physical_group_data!(s::SimulationFemHelmholtz)
+function _organize_pressure_region_data!(s::SimulationFemHelmholtz)
     s._psei_count = 0
     for sei in 1:s._sei_count
-        if haskey(s._espg_ispgp_bimap, s._sei_to_espg[sei])
+        if haskey(s._esr_isrp_bimap, s._sei_to_esr[sei])
             s._psei_count += 1
         end
     end
 
     s._psei_to_ni = Matrix{Int}(undef, _enis_count(s), s._psei_count)
-    s._psei_to_ispgp = Vector{Int}(undef, s._psei_count)
+    s._psei_to_isrp = Vector{Int}(undef, s._psei_count)
     psei = 0
     for sei in 1:s._sei_count
-        if haskey(s._espg_ispgp_bimap, s._sei_to_espg[sei])
+        if haskey(s._esr_isrp_bimap, s._sei_to_esr[sei])
             psei += 1
             s._psei_to_ni[:, psei] = s._sei_to_ni[:, sei]
-            s._psei_to_ispgp[psei] = s._espg_ispgp_bimap[s._sei_to_espg[sei]]
+            s._psei_to_isrp[psei] = s._esr_isrp_bimap[s._sei_to_esr[sei]]
         end
     end
 
     # create vector of ni sets
-    ni_sets::Vector{Set{Int}} = [Set{Int}() for _ in 1:s._ispgp_count]
+    ni_sets::Vector{Set{Int}} = [Set{Int}() for _ in 1:s._isrp_count]
     for psei in 1:s._psei_count
         ni = s._psei_to_ni[:, psei]
-        ispgp::Int = s._psei_to_ispgp[psei]
-        push!(ni_sets[ispgp], ni...)
+        isrp::Int = s._psei_to_isrp[psei]
+        push!(ni_sets[isrp], ni...)
     end
     for ppi in 1:s._ppi_count
         ni::Int = s._ppi_to_ni[ppi]
@@ -79,10 +79,10 @@ function _organize_pressure_physical_group_data!(s::SimulationFemHelmholtz)
 
         funcs::Vector{Function} = Function[]
         for idx in sig
-            if idx <= s._ispgp_count
-                push!(funcs, s._ispgp_to_pressure_func[idx])
+            if idx <= s._isrp_count
+                push!(funcs, s._isrp_to_pressure_func[idx])
             else
-                ppi = idx - s._ispgp_count
+                ppi = idx - s._isrp_count
                 push!(funcs, s._ppi_to_pressure_func[ppi])
             end
         end
@@ -100,73 +100,73 @@ function _organize_pressure_physical_group_data!(s::SimulationFemHelmholtz)
     return nothing
 end
 
-function _organize_volume_physical_group_data!(s::SimulationFemHelmholtz)
-    s._vei_to_ivpg = Vector{Int}(undef, s._vei_count)
+function _organize_volume_region_data!(s::SimulationFemHelmholtz)
+    s._vei_to_ivr = Vector{Int}(undef, s._vei_count)
     for vei in 1:s._vei_count
-        s._vei_to_ivpg[vei] = s._evpg_ivpg_bimap[s._vei_to_evpg[vei]]
+        s._vei_to_ivr[vei] = s._evr_ivr_bimap[s._vei_to_evr[vei]]
     end
     return nothing
 end
 
-function _organize_impedance_physical_group_data!(s::SimulationFemHelmholtz)
+function _organize_impedance_region_data!(s::SimulationFemHelmholtz)
     s._isei_count = 0
     for sei in 1:s._sei_count
-        if haskey(s._espg_ispgi_bimap, s._sei_to_espg[sei])
+        if haskey(s._esr_isri_bimap, s._sei_to_esr[sei])
             s._isei_count += 1
         end
     end
 
     s._isei_to_ni = Matrix{Int}(undef, _enis_count(s), s._isei_count)
-    s._isei_to_ispgi = Vector{Int}(undef, s._isei_count)
+    s._isei_to_isri = Vector{Int}(undef, s._isei_count)
     isei = 0
     for sei in 1:s._sei_count
-        if haskey(s._espg_ispgi_bimap, s._sei_to_espg[sei])
+        if haskey(s._esr_isri_bimap, s._sei_to_esr[sei])
             isei += 1
             s._isei_to_ni[:, isei] = s._sei_to_ni[:, sei]
-            s._isei_to_ispgi[isei] = s._espg_ispgi_bimap[s._sei_to_espg[sei]]
+            s._isei_to_isri[isei] = s._esr_isri_bimap[s._sei_to_esr[sei]]
         end
     end
     return nothing
 end
 
 function _write_pq_matrices(s::SimulationFemHelmholtz)
-    # _ivpg_to_density_values
-    s._ivpg_to_density_values::Matrix{ComplexF64} =
-        Matrix{ComplexF64}(undef, s._ivpg_count, s._fi_count)
+    # _ivr_to_density_values
+    s._ivr_to_density_values::Matrix{ComplexF64} =
+        Matrix{ComplexF64}(undef, s._ivr_count, s._fi_count)
     for fi in 1:s._fi_count
-        for ivpg in 1:s._ivpg_count
-            s._ivpg_to_density_values[ivpg, fi] = 
-                s._ivpg_to_density_func[ivpg](s._fi_to_freq[fi])
+        for ivr in 1:s._ivr_count
+            s._ivr_to_density_values[ivr, fi] = 
+                s._ivr_to_density_func[ivr](s._fi_to_freq[fi])
         end
     end
     
-    # _ivpg_to_soundspeed_values
-    s._ivpg_to_soundspeed_values::Matrix{ComplexF64} =
-        Matrix{ComplexF64}(undef, s._ivpg_count, s._fi_count)
-    for ivpg in 1:s._ivpg_count
+    # _ivr_to_soundspeed_values
+    s._ivr_to_soundspeed_values::Matrix{ComplexF64} =
+        Matrix{ComplexF64}(undef, s._ivr_count, s._fi_count)
+    for ivr in 1:s._ivr_count
         for fi in 1:s._fi_count
-            s._ivpg_to_soundspeed_values[ivpg, fi] =
-                s._ivpg_to_soundspeed_func[ivpg](s._fi_to_freq[fi])
+            s._ivr_to_soundspeed_values[ivr, fi] =
+                s._ivr_to_soundspeed_func[ivr](s._fi_to_freq[fi])
         end
     end
 
-    # _ispgi_to_impedance_values
-    s._ispgi_to_impedance_values::Matrix{ComplexF64} =
-        Matrix{ComplexF64}(undef, s._ispgi_count, s._fi_count)
-    for ispgi in 1:s._ispgi_count
+    # _isri_to_impedance_values
+    s._isri_to_impedance_values::Matrix{ComplexF64} =
+        Matrix{ComplexF64}(undef, s._isri_count, s._fi_count)
+    for isri in 1:s._isri_count
         for fi in 1:s._fi_count
-            s._ispgi_to_impedance_values[ispgi, fi] =
-                s._ispgi_to_impedance_func[ispgi](s._fi_to_freq[fi])
+            s._isri_to_impedance_values[isri, fi] =
+                s._isri_to_impedance_func[isri](s._fi_to_freq[fi])
         end
     end
 
-    # _ispgv_to_velocity_values
-    s._ispgv_to_velocity_values::Matrix{ComplexF64} =
-        Matrix{ComplexF64}(undef, s._ispgv_count, s._fi_count)
-    for ispgv in 1:s._ispgv_count
+    # _isrv_to_velocity_values
+    s._isrv_to_velocity_values::Matrix{ComplexF64} =
+        Matrix{ComplexF64}(undef, s._isrv_count, s._fi_count)
+    for isrv in 1:s._isrv_count
         for fi in 1:s._fi_count
-            s._ispgv_to_velocity_values[ispgv, fi] =
-                s._ispgv_to_velocity_func[ispgv](s._fi_to_freq[fi])
+            s._isrv_to_velocity_values[isrv, fi] =
+                s._isrv_to_velocity_func[isrv](s._fi_to_freq[fi])
         end
     end
 

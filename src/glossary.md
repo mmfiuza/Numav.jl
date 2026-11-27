@@ -6,53 +6,53 @@
 
 - IDX (index): An unsigned integer that uniquely identifies an entity.
 
-- EPG (external physical group): An unsigned integer present in an external mesh file (.bdf, etc) or API that classifies an entity into some group, usually a material. An EPG sequence is NOT necessarily consecutive, since mesh formats can have arbitrary conventions.
-    * ESPG: External Surface Physical Group
-    * EVPG: External Volume Physical Group
+- er (external region): An unsigned integer present in an external mesh file (.bdf, etc) or API that classifies an entity into some group, usually a material. An er sequence is NOT necessarily consecutive, since mesh formats can have arbitrary conventions.
+    * esr: external surface region
+    * evr: external volume region
 
-- IPG (internal physical group): An unsigned integer that classifies an entity into some group in Numav's internal implementation. An IPG sequence is ALWAYS consecutive starting at 0, because that is conveninent to manipulate in C++.
-    - ISPG: Internal Surface Physical Group
-        - ISPGI: Internal Surface Physical Group with Impedance
-        - ISPGV: Internal Surface Physical Group with Velocity
-        - ISPGP: Internal Surface Physical Group with Pressure
-    - IVPG: Internal Volume Physical Group
+- ir (internal region): An unsigned integer that classifies an entity into some group in Numav's internal implementation. An ir sequence is ALWAYS consecutive starting at 0, because that is conveninent to manipulate in C++.
+    - isr: internal surface region
+        - isri: internal surface region with impedance
+        - isrv: internal surface region with velocity
+        - isrp: internal surface region with pressure
+    - ivr: internal volume region
 
-- FI (frequency independent): Some quantity that will be the constant relative to sound frequency.
+- fi (frequency independent): Some quantity that will be the constant relative to sound frequency.
 
-- FD (frequency dependent): Some quantity that will change relative to sound frequency.
+- fd (frequency dependent): Some quantity that will change relative to sound frequency.
 
-- NNZ (non-zero): Some quantity that is not null. Usually refers to the non-zero terms of a sparse matrix.
+- nnz (non-zero): Some quantity that is not null. Usually refers to the non-zero terms of a sparse matrix.
 
-- SEI (Surface Element Index):
-    - ISEI (Impedance Surface Element Index)
-    - VSEI (Velocity Surface Element Index)
-    - PSEI (Pressure Surface Element Index)
-- VEI (Volume Element Index)
+- sei (surface element index):
+    - ISEI (impedance surface element index)
+    - VSEI (velocity surface element index)
+    - PSEI (pressure surface element index)
+- vei (volume element index)
 
-- FIPI (Frequency Independent Part Index)
+- fipi (frequency independent part index)
 
-- GPI (Gauss Point Index)
+- gpi (gauss point index)
 
-- DI (Dimension Index)
+- di (dimension index)
 
-- NI (Node Index)
+- ni (node index)
 
-- NCI (Node Combination Index)
+- nci (node combination index)
 
-- ENI (Elemental Node Index)
-    - ENIS (Elemental Node Index of Surface)
-    - ENIV (Elemental Node Index of Volume)
+- eni (elemental node index)
+    - enis (elemental node index of surface)
+    - eniv (elemental node index of volume)
 
-- VPI (Velocity Point Index)
+- vpi (velocity point index)
 
-- PPI (Pressure Point Index)
+- ppi (pressure point index)
 
-- PNI (Pressure Node Index)
+- pni (pressure node index)
 
-- PVI (Pressure Value Index)
+- pvi (pressure value index)
 
-- NZI (Non-Zero Index)
+- nzi (non-zero index)
 
-- PQ (Physical Quantity)
+- pq (physical quantity)
 
-- PQV (Physical Quantity Value)
+- pqv (physical quantity value)
