@@ -15,27 +15,27 @@ void simulate_fem_helmholtz(
     const uint64_t ni_count,
     // volume materials
     const uint64_t* const vei_to_ni,
-    const uint64_t* const vei_to_ivpg,
+    const uint64_t* const vei_to_ivr,
     const uint64_t vei_count,
-    const Cmplx* const ivpg_to_density,
-    const Cmplx* const ivpg_to_soundspeed,
-    const uint64_t ivpg_count,
+    const Cmplx* const ivr_to_density,
+    const Cmplx* const ivr_to_soundspeed,
+    const uint64_t ivr_count,
     // surface materials
     const uint64_t* const isei_to_ni,
-    const uint64_t* const isei_to_ispgi,
+    const uint64_t* const isei_to_isri,
     const uint64_t isei_count,
-    const Cmplx* const ispgi_to_impedance,
-    const uint64_t ispgi_count,
+    const Cmplx* const isri_to_impedance,
+    const uint64_t isri_count,
     // volume velocity
     const uint64_t* const vpi_to_ni,
     const Cmplx* const vpi_to_volvel,
     const uint64_t vpi_count,
     // surface velocity
     const uint64_t* const vsei_to_ni,
-    const uint64_t* const vsei_to_ispgv,
+    const uint64_t* const vsei_to_isrv,
     const uint64_t vsei_count,
-    const Cmplx* const ispgv_to_velocity,
-    const uint64_t ispgv_count,
+    const Cmplx* const isrv_to_velocity,
+    const uint64_t isrv_count,
     // pressure
     const uint64_t* const pni_to_ni,
     const uint64_t pni_count,
@@ -69,17 +69,17 @@ void simulate_fem_helmholtz(
             ),
             vei_count*ENIV_COUNT<S,O>
         );
-    s._vei_to_ivpg = fz::SafePtr<const uint64_t>::make_view(
-        vei_to_ivpg, vei_count
+    s._vei_to_ivr = fz::SafePtr<const uint64_t>::make_view(
+        vei_to_ivr, vei_count
     );
     s._vei_count = vei_count;
-    s._ivpg_to_density = fz::SafePtr<const Cmplx>::make_view(
-        ivpg_to_density, ivpg_count*fi_count
+    s._ivr_to_density = fz::SafePtr<const Cmplx>::make_view(
+        ivr_to_density, ivr_count*fi_count
     );
-    s._ivpg_to_soundspeed = fz::SafePtr<const Cmplx>::make_view(
-        ivpg_to_soundspeed, ivpg_count*fi_count
+    s._ivr_to_soundspeed = fz::SafePtr<const Cmplx>::make_view(
+        ivr_to_soundspeed, ivr_count*fi_count
     );
-    s._ivpg_count = ivpg_count;
+    s._ivr_count = ivr_count;
 
     // surface materials
     s._isei_to_ni =
@@ -89,14 +89,14 @@ void simulate_fem_helmholtz(
             ),
             isei_count*ENIS_COUNT<S,O>
         );
-    s._isei_to_ispgi = fz::SafePtr<const uint64_t>::make_view(
-        isei_to_ispgi, isei_count
+    s._isei_to_isri = fz::SafePtr<const uint64_t>::make_view(
+        isei_to_isri, isei_count
     );
     s._isei_count = isei_count;
-    s._ispgi_to_impedance = fz::SafePtr<const Cmplx>::make_view(
-        ispgi_to_impedance, ispgi_count*fi_count
+    s._isri_to_impedance = fz::SafePtr<const Cmplx>::make_view(
+        isri_to_impedance, isri_count*fi_count
     );
-    s._ispgi_count = ispgi_count;
+    s._isri_count = isri_count;
 
     // volume velocity
     s._vpi_to_ni = fz::SafePtr<const uint64_t>::make_view(
@@ -115,14 +115,14 @@ void simulate_fem_helmholtz(
             ),
             vsei_count*ENIS_COUNT<S,O>
         );
-    s._vsei_to_ispgv = fz::SafePtr<const uint64_t>::make_view(
-        vsei_to_ispgv, vsei_count
+    s._vsei_to_isrv = fz::SafePtr<const uint64_t>::make_view(
+        vsei_to_isrv, vsei_count
     );
     s._vsei_count = vsei_count;
-    s._ispgv_to_velocity = fz::SafePtr<const Cmplx>::make_view(
-        ispgv_to_velocity, ispgv_count*fi_count
+    s._isrv_to_velocity = fz::SafePtr<const Cmplx>::make_view(
+        isrv_to_velocity, isrv_count*fi_count
     );
-    s._ispgv_count = ispgv_count;
+    s._isrv_count = isrv_count;
 
     // pressure
     s._pni_to_ni = fz::SafePtr<const uint64_t>::make_view(

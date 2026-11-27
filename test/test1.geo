@@ -104,5 +104,5 @@ Mesh 3;
 
 // BDF export — small field format (0 = free, 1 = small, 2 = large)
 Mesh.BdfFieldFormat = 1;
-// Mesh.SaveAll = 1; // include all elements, not only those in Physical groups
+// Mesh.SaveAll = 1; // include all elements, not only those in regions
 Save "test1.bdf";

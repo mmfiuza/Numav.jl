@@ -6,7 +6,7 @@ The specific acoustic impedance is the ratio of complex amplitude of acoustic pr
 |:--|:--|:--|
 | `simulation` | `Simulation` | The simulation instance. |
 | **Keyword arguments** | | |
-| `physical_group` | `Integer`, `Vector{Integer}` | Physical group ID of the boundary surface. |
+| `region` | `Integer`, `Vector{Integer}` | Region ID of the boundary surface. |
 | `specific_acoustic_impedance` | [frequency-dependent physical quantity](@ref "Frequency-dependent physical quantities") | specific surface acoustic impedance (Pa·s/m). |
 
 ---
@@ -14,10 +14,10 @@ The specific acoustic impedance is the ratio of complex amplitude of acoustic pr
 
 > ```julia
 > Z(f) = 1f + 2im
-> add_surface_material!(s, physical_group=4, specific_acoustic_impedance=Z)
+> add_surface_material!(s, region=4, specific_acoustic_impedance=Z)
 > ```
 
-> Multiple physical groups can be assigned at once:
+> Multiple regions can be assigned at once:
 > ```julia
-> add_surface_material!(s, physical_group=[3,1], specific_acoustic_impedance=1.0)
+> add_surface_material!(s, region=[3,1], specific_acoustic_impedance=1.0)
 > ```

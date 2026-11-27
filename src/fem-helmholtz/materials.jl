@@ -5,30 +5,30 @@ export
     add_surface_material!,
     add_sound_source!
 
-function _check_if_espg_is_valid(s::SimulationFemHelmholtz, espg::Int)
-    if !(espg in s._existing_espg)
-        error("Physical group $espg not found in mesh file.")
+function _check_if_esr_is_valid(s::SimulationFemHelmholtz, esr::Int)
+    if !(esr in s._existing_esr)
+        error("Region $esr not found in mesh file.")
     end
-    if (haskey(s._espg_ispgi_bimap, espg) ||
-        haskey(s._espg_ispgv_bimap, espg) ||
-        haskey(s._espg_ispgp_bimap, espg)
+    if (haskey(s._esr_isri_bimap, esr) ||
+        haskey(s._esr_isrv_bimap, esr) ||
+        haskey(s._esr_isrp_bimap, esr)
     )
-        error("Physical group $espg already assigned.")
+        error("Region $esr already assigned.")
     end
     return nothing
 end
 
 function add_volume_material!( 
     s::SimulationFemHelmholtz;
-    physical_group::Union{Integer, AbstractVector{<:Integer}},
+    region::Union{Integer, AbstractVector{<:Integer}},
     density::Fdpq,
     speed_of_sound::Fdpq
 )
-    if physical_group isa AbstractVector
-        for pg in physical_group
+    if region isa AbstractVector
+        for r in region
             add_volume_material!(
                 s,
-                physical_group = pg,
+                region = r,
                 density = density,
                 speed_of_sound = speed_of_sound
             )
@@ -37,34 +37,34 @@ function add_volume_material!(
     end
     _check_if_mesh_is_defined(s)
     _check_if_did_run(s)
-    evpg::Int = physical_group
-    if !(evpg in s._existing_evpg)
-        error("Physical group $evpg not found in mesh file.")
+    evr::Int = region
+    if !(evr in s._existing_evr)
+        error("Region $evr not found in mesh file.")
     end
-    if haskey(s._evpg_ivpg_bimap, evpg)
-        error("Physical group $evpg already assigned.")
+    if haskey(s._evr_ivr_bimap, evr)
+        error("Region $evr already assigned.")
     end
     
     density_func::Function = _fdpq_to_function(density)
     soundspeed_func::Function = _fdpq_to_function(speed_of_sound)
-    s._ivpg_count += 1
-    ivpg::Int = s._ivpg_count
-    s._evpg_ivpg_bimap[evpg] = ivpg
-    push!(s._ivpg_to_density_func, density_func)
-    push!(s._ivpg_to_soundspeed_func, soundspeed_func)
+    s._ivr_count += 1
+    ivr::Int = s._ivr_count
+    s._evr_ivr_bimap[evr] = ivr
+    push!(s._ivr_to_density_func, density_func)
+    push!(s._ivr_to_soundspeed_func, soundspeed_func)
     return nothing
 end
 
 function add_surface_material!( 
     s::SimulationFemHelmholtz;
-    physical_group::Union{Integer, AbstractVector{<:Integer}},
+    region::Union{Integer, AbstractVector{<:Integer}},
     specific_acoustic_impedance::Fdpq
 )
-    if physical_group isa AbstractVector
-        for pg in physical_group
+    if region isa AbstractVector
+        for r in region
             add_surface_material!(
                 s,
-                physical_group = pg,
+                region = r,
                 specific_acoustic_impedance = specific_acoustic_impedance
             )
         end
@@ -72,15 +72,15 @@ function add_surface_material!(
     end
     _check_if_mesh_is_defined(s)
     _check_if_did_run(s)
-    espg::Int = physical_group
-    _check_if_espg_is_valid(s, espg)
+    esr::Int = region
+    _check_if_esr_is_valid(s, esr)
 
-    s._ispgi_count += 1
-    ispgi::Int = s._ispgi_count
-    s._espg_ispgi_bimap[espg] = ispgi
+    s._isri_count += 1
+    isri::Int = s._isri_count
+    s._esr_isri_bimap[esr] = isri
 
     impedance_func::Function = _fdpq_to_function(specific_acoustic_impedance)
-    push!(s._ispgi_to_impedance_func, impedance_func);
+    push!(s._isri_to_impedance_func, impedance_func);
     return nothing
 end
 
@@ -91,7 +91,7 @@ function add_sound_source!(
         AbstractVector{<:AbstractVector{<:Real}},
         Nothing
     } = nothing,
-    physical_group::Union{
+    region::Union{
         Integer,
         AbstractVector{<:Integer},
         Nothing
@@ -105,7 +105,7 @@ function add_sound_source!(
             add_sound_source!(
                 s,
                 coordinates = c,
-                physical_group = physical_group,
+                region = region,
                 volume_velocity = volume_velocity,
                 particle_velocity = particle_velocity,
                 pressure = pressure
@@ -113,12 +113,12 @@ function add_sound_source!(
         end
         return
     end
-    if physical_group isa AbstractVector
-        for pg in physical_group
+    if region isa AbstractVector
+        for r in region
             add_sound_source!(
                 s,
                 coordinates = coordinates,
-                physical_group = pg,
+                region = r,
                 volume_velocity = volume_velocity,
                 particle_velocity = particle_velocity,
                 pressure = pressure
@@ -127,14 +127,14 @@ function add_sound_source!(
         return
     end
 
-    if isnothing(coordinates) && isnothing(physical_group)
+    if isnothing(coordinates) && isnothing(region)
         throw(ArgumentError(
-            "`coordinates` and `physical_group` not defined"
+            "`coordinates` and `region` not defined"
         ))
     end
-    if !isnothing(coordinates) && !isnothing(physical_group)
+    if !isnothing(coordinates) && !isnothing(region)
         throw(ArgumentError(
-            "`coordinates` and `physical_group` defined simultaneously"
+            "`coordinates` and `region` defined simultaneously"
         ))
     end
     fdpq_count = count(
@@ -156,9 +156,9 @@ function add_sound_source!(
             "x,y,z coordinates do not have 3 components"
         ))
     end
-    if !isnothing(volume_velocity) && !isnothing(physical_group)
+    if !isnothing(volume_velocity) && !isnothing(region)
         throw(ArgumentError(
-            "`volume_velocity` and `physical_group` defined simultaneously"
+            "`volume_velocity` and `region` defined simultaneously"
         ))
     end
     if !isnothing(particle_velocity) && !isnothing(coordinates)
@@ -172,9 +172,9 @@ function add_sound_source!(
 
     if !isnothing(coordinates)
         closest_ni::Int = _get_closest_node(s, coordinates)
-    elseif !isnothing(physical_group)
-        espg::Int = physical_group
-        _check_if_espg_is_valid(s, espg);
+    elseif !isnothing(region)
+        esr::Int = region
+        _check_if_esr_is_valid(s, esr);
     end
 
     # Check if volume_velocity, particle_velocity or pressure was given
@@ -185,21 +185,21 @@ function add_sound_source!(
         s._vpi_count += 1
     elseif !isnothing(particle_velocity)
         parvel_func::Function = _fdpq_to_function(particle_velocity)
-        push!(s._ispgv_to_velocity_func, parvel_func)
-        s._ispgv_count += 1
-        ispgv::Int = s._ispgv_count
-        s._espg_ispgv_bimap[espg] = ispgv
+        push!(s._isrv_to_velocity_func, parvel_func)
+        s._isrv_count += 1
+        isrv::Int = s._isrv_count
+        s._esr_isrv_bimap[esr] = isrv
     elseif !isnothing(pressure)
         pressure_func::Function = _fdpq_to_function(pressure)
         if !isnothing(coordinates)
             push!(s._ppi_to_pressure_func, pressure_func)
             push!(s._ppi_to_ni, closest_ni)
             s._ppi_count += 1
-        elseif !isnothing(physical_group)
-            push!(s._ispgp_to_pressure_func, pressure_func)
-            s._ispgp_count += 1
-            ispgp::Int = s._ispgp_count
-            s._espg_ispgp_bimap[espg] = ispgp
+        elseif !isnothing(region)
+            push!(s._isrp_to_pressure_func, pressure_func)
+            s._isrp_count += 1
+            isrp::Int = s._isrp_count
+            s._esr_isrp_bimap[esr] = isrp
         end
     end
     s._is_any_source_defined = true;

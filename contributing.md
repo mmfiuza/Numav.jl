@@ -108,13 +108,16 @@ Follow these steps in order.
 
 **1. Build the JLL for local testing.** From the root of the repository, run the recipe in Yggdrasil with the `--deploy-jll=local` option:
 ```
-rm -rf build && rm -rf install && rm -rf products && julia +1.12.4 \
+rm -rf build && rm -rf install && rm -rf products &&
+JULIA_TARGET=$(julia +release -e \
+'print("$(VERSION.major).$(VERSION.minor).0")') &&
+julia +1.12.4 \
 /workspace/Yggdrasil/N/numav_julia/build_tarballs.jl \
---deploy-jll=local x86_64-linux-gnu-julia_version+1.12.0
+--deploy-jll=local x86_64-linux-gnu-julia_version+$JULIA_TARGET
 ```
 This builds `numav_julia_jll` and deploys it locally, without registering or publishing anything. The package is placed in `/usr/local/share/julia/dev/numav_julia_jll`.
 
-**2. Dev the Julia packages.** In the package manager, `dev` both the local JLL and `Numav.jl`:
+**2. Dev the Julia packages.** In the package manager, `dev` both the local JLL and `Numav.jl`.
 ```
 dev /usr/local/share/julia/dev/numav_julia_jll
 dev /workspace
@@ -129,6 +132,11 @@ julia c++/generate_override.jl
 ```
 rm -rf build &&
 rm -rf c++/override/lib &&
+JLCXX_PREFIX=$(julia -e '
+numav = Base.identify_package("Numav")
+cxxwrap = Base.identify_package(numav, "CxxWrap")
+CxxWrap = Base.require(cxxwrap)
+print(CxxWrap.prefix_path())') &&
 cmake c++ -B build \
 -D CMAKE_BUILD_TYPE=Release \
 -D SOLVER=ONEMKL \
@@ -136,13 +144,13 @@ cmake c++ -B build \
 -D CMAKE_INSTALL_PREFIX=c++/override \
 -D CMAKE_PREFIX_PATH="\
 /opt/intel/oneapi/mkl/2025.2/lib/cmake;\
-/usr/local/share/julia/artifacts/6d260b2393efd5030d726537e5efe3573d0fbd28" &&
+$JLCXX_PREFIX" &&
 cmake --build build --parallel $(nproc) &&
 cmake --install ./build
 ```
-The second entry of `CMAKE_PREFIX_PATH` points to a Julia artifact directory. If the hash in that path does not exist on your machine, adjust it to the artifact directory that was installed in your environment.
+The second entry of `CMAKE_PREFIX_PATH` is the directory of `libcxxwrap_julia`, which contains the `JlCxx` CMake package. It is a Julia artifact, so its path may change between versions of Julia or of the library. For this reason, it is obtained with [`CxxWrap.prefix_path()`](https://github.com/JuliaInterop/CxxWrap.jl#compiling-the-c-code).
 
-From now on, whenever you change the C++ code, repeat step 4 to rebuild and reinstall `libnumav_julia`. Steps 1 to 3 only need to be repeated if the recipe or the JLL itself changes.
+From now on, whenever you change the C++ code, repeat step 4 to rebuild and reinstall `libnumav_julia`. Steps 1 to 3 only need to be repeated if the recipe or the JLL itself changes, or if the `release` channel moves to a new minor version of Julia.
 
 ## Documentation
 
@@ -192,3 +200,15 @@ The comment will trigger [@JuliaRegistrator](https://github.com/JuliaRegistrator
 3. When the pull request is merged, Yggdrasil's automated build process builds the binaries for all supported platforms and registers the new `numav_julia_jll` version in the General registry.
 
 Remember that the version number of the JLL is independent of the version number of `Numav.jl`, so do not try to keep them equal.
+
+## To do
+
+- Add checks to improve the robustness of the `.bdf` reader. Check for poorly formatted files or impossible mesh configurations.
+- Create a function called `plot_pressure`. It should show the SPL curve along frequency at some chosen point.
+- Create two functions: `plot_surface_regions` and `plot_volume_regions`. They should show the mesh indicating visually all the regions, grouping by color or any other visual manner. The number of each region must be clear.
+- Create a change log, probably somewhere in the documentation page.
+- Add option to plot real part, imaginary part and phase in `plot_pressure_field`.
+- Add dark mode plots.
+- Make `set_frequency!` accept a logarithmic option of `sampling_density`. This will make graphs with a logarithmic frequency scale show equally spaced points.
+- Make point volume velocity sound sources be split into all 4 closest points. Currently, Numav only applies the source to the closest node, like if the source was exactly on it.
+- Check if points given by the users are outside the simulation domain.

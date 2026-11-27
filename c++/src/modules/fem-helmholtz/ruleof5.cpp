@@ -20,27 +20,27 @@ SimulationFemHelmholtz<S,O>::~SimulationFemHelmholtz() {
     _a_vals.free();
     _b_row_idx.free();
     _b_vals.free();
-    for (uint64_t ivpg = 0UL; ivpg != _ivpg_count; ++ivpg) {
-        _ivpg_to_stif_fi_part[ivpg].free();
-        _ivpg_to_mass_fi_part[ivpg].free();
-        _ivpg_to_ptr_in_a[ivpg].free();
+    for (uint64_t ivr = 0UL; ivr != _ivr_count; ++ivr) {
+        _ivr_to_stif_fi_part[ivr].free();
+        _ivr_to_mass_fi_part[ivr].free();
+        _ivr_to_ptr_in_a[ivr].free();
     }
-    _ivpg_to_stif_fi_part.free();
-    _ivpg_to_mass_fi_part.free();
-    _ivpg_to_ptr_in_a.free();
-    for (uint64_t ispgi = 0UL; ispgi != _ispgi_count; ++ispgi) {
-        _ispgi_to_damp_fi_part[ispgi].free();
-        _ispgi_to_ptr_in_a[ispgi].free();
+    _ivr_to_stif_fi_part.free();
+    _ivr_to_mass_fi_part.free();
+    _ivr_to_ptr_in_a.free();
+    for (uint64_t isri = 0UL; isri != _isri_count; ++isri) {
+        _isri_to_damp_fi_part[isri].free();
+        _isri_to_ptr_in_a[isri].free();
     }
-    _ispgi_to_damp_fi_part.free();
-    _ispgi_to_ptr_in_a.free();
+    _isri_to_damp_fi_part.free();
+    _isri_to_ptr_in_a.free();
     _vpi_to_ptr_in_b.free();
-    for (uint64_t ispgv = 0UL; ispgv != _ispgv_count; ++ispgv) {
-        _ispgv_to_forc_fi_part[ispgv].free();
-        _ispgv_to_ptr_in_b[ispgv].free();
+    for (uint64_t isrv = 0UL; isrv != _isrv_count; ++isrv) {
+        _isrv_to_forc_fi_part[isrv].free();
+        _isrv_to_ptr_in_b[isrv].free();
     }
-    _ispgv_to_forc_fi_part.free();
-    _ispgv_to_ptr_in_b.free();
+    _isrv_to_forc_fi_part.free();
+    _isrv_to_ptr_in_b.free();
     for (uint64_t pvi = 0UL; pvi != _pvi_count; ++pvi) {
         _pvi_to_ptr_in_a[pvi].free();
         _pvi_to_ptr_in_b[pvi].free();

@@ -1,4 +1,4 @@
-Loads the mesh file. It defines the geometry of the domain and must contain the physical groups that are referenced when assigning boundary conditions. To generate meshes, a good open-source option is [Gmsh](https://gmsh.info/).
+Loads the mesh file. It defines the geometry of the domain and must contain the regions that are referenced when assigning boundary conditions. To generate meshes, a good open-source option is [Gmsh](https://gmsh.info/).
 
 | Positional arguments | Type | Description |
 |:--|:--|:--|
